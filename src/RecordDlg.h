@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 #define _AFXDLL
 #include <afxwin.h>
 #include <afxext.h>
 #include <functional>
 #include <sstream>
+#include <array>
 #include "Resource.h"
 #include "Utils.h"
 #include "RecordHelper.h"

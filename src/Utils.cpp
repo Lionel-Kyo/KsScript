@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "Utils.h"
 #include <chrono>
 #include <sstream>
@@ -25,36 +25,37 @@ std::optional<std::wstring> GetNameByKey(int32_t vk) {
 }
 
 std::string_view StringTrim(std::string_view in) {
-    auto checkFn = [](char c) {
-        return std::isspace(c);
-    };
+    auto isSpace = [](char c) { return std::isspace(c); };
 
-    auto view = std::views::all(in)
-        | std::views::drop_while(checkFn)
-        | std::views::reverse
-        | std::views::drop_while(checkFn)
-        | std::views::reverse;
+    size_t first = 0;
+    while (first < in.size() && isSpace(in[first])) {
+        ++first;
+    }
 
-    if (view.empty()) return {};
+    size_t last = in.size();
+    while (last > first && isSpace(in[last - 1])) {
+        --last;
+    }
 
-    return { std::to_address(view.begin()), view.size() };
+    return in.substr(first, last - first);
 }
 
 std::wstring_view StringTrim(std::wstring_view in) {
-    auto checkFn = [](wchar_t c) {
-        return std::iswspace(c);
-        };
+    auto isSpace = [](wchar_t c) { return std::iswspace(c); };
 
-    auto view = std::views::all(in)
-        | std::views::drop_while(checkFn)
-        | std::views::reverse
-        | std::views::drop_while(checkFn)
-        | std::views::reverse;
+    size_t first = 0;
+    while (first < in.size() && isSpace(in[first])) {
+        ++first;
+    }
 
-    if (view.empty()) return {};
+    size_t last = in.size();
+    while (last > first && isSpace(in[last - 1])) {
+        --last;
+    }
 
-    return { std::to_address(view.begin()), view.size() };
+    return in.substr(first, last - first);
 }
+
 
 std::string StringLower(const std::string& in) {
     std::string result = in;
@@ -309,7 +310,7 @@ bool ParseStringArg(const std::wstring& args, std::wstring& out)
 }
 
 namespace InputSim {
-    bool Delay(std::stop_token stopToken, int64_t ms) {
+    bool Delay(const std::atomic<bool>& isForceStopRequested, int64_t ms) {
         std::mutex mutex;
         std::condition_variable_any cv;
         std::unique_lock lock(mutex);
@@ -317,11 +318,11 @@ namespace InputSim {
         cv.wait_for(
             lock,
             std::chrono::milliseconds(ms),
-            [&stopToken] {
-                return stopToken.stop_requested();
+            [&isForceStopRequested] {
+                return isForceStopRequested.load();
             }
         );
-        return !stopToken.stop_requested();
+        return !isForceStopRequested.load();
     }
 
     void MouseDown(MouseButtonType type) {
@@ -410,7 +411,7 @@ namespace InputSim {
         CPoint pt;
         ::GetCursorPos(&pt); 
 #ifdef _LANG_ZH_TW_
-        ::MessageBoxW(nullptr, std::format(L"X: {}, Y: {}", pt.x, pt.y).c_str(), L"²{¦b®y¼Ğ", MB_ICONINFORMATION | MB_OK);
+        ::MessageBoxW(nullptr, std::format(L"X: {}, Y: {}", pt.x, pt.y).c_str(), L"ç¾åœ¨åº§æ¨™", MB_ICONINFORMATION | MB_OK);
 #else
         ::MessageBoxW(nullptr, std::format(L"X: {}, Y: {}", pt.x, pt.y).c_str(), L"Current Coordinate", MB_ICONINFORMATION | MB_OK);
 #endif // _LANG_ZH_TW_
@@ -449,7 +450,7 @@ namespace InputSim {
         SendInput(1, &input, sizeof(INPUT));
     }
 
-    void OutputText(std::stop_token stopToken, const std::wstring& text, int64_t ms) {
+    void OutputText(const std::atomic<bool>& isForceStopRequested, const std::wstring& text, int64_t ms) {
         for (const auto& c : text) {
             if (c == L'\0') continue;
             INPUT inputs[2] = {};
@@ -461,17 +462,17 @@ namespace InputSim {
             inputs[1].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
 
             SendInput(2, inputs, sizeof(INPUT));
-            if (stopToken.stop_requested()) break;
-            if (ms > 0 && !Delay(stopToken, ms)) break;
+            if (isForceStopRequested.load()) break;
+            if (ms > 0 && !Delay(isForceStopRequested, ms)) break;
         }
     }
 }
 
 std::optional<MouseButtonType> MouseButtonTypeFromString(const std::wstring& str)
 {
-    if (str == L"left" || str == L"¥ª") return MouseButtonType::Left;
-    else if (str == L"right" || str == L"¥k")  return MouseButtonType::Right;
-    else if (str == L"middle" || str == L"¤¤") return MouseButtonType::Middle;
+    if (str == L"left" || str == L"å·¦") return MouseButtonType::Left;
+    else if (str == L"right" || str == L"å³")  return MouseButtonType::Right;
+    else if (str == L"middle" || str == L"ä¸­") return MouseButtonType::Middle;
     else if (str == L"x1") return MouseButtonType::X1;
     else if (str == L"x2") return MouseButtonType::X2;
     return std::nullopt;
@@ -479,24 +480,39 @@ std::optional<MouseButtonType> MouseButtonTypeFromString(const std::wstring& str
 
 std::optional<ScriptRunMode> ScriptRunModeFromString(const std::wstring& str)
 {
-    if (str == L"single" || str == L"³æ¦¸") return ScriptRunMode::Single;
-    else if (str == L"continuous" || str == L"³sÄò")  return ScriptRunMode::Continuous;
-    else if (str == L"switch" || str == L"¤Á´«") return ScriptRunMode::Switch;
+    if (str == L"fullsingle" || str == L"å®Œæ•´å–®æ¬¡") return ScriptRunMode::FullSingle;
+    else if (str == L"fullcontinuous" || str == L"å®Œæ•´é€£çºŒ")  return ScriptRunMode::FullContinuous;
+    else if (str == L"fullswitch" || str == L"å®Œæ•´åˆ‡æ›") return ScriptRunMode::FullSwitch;
+    if (str == L"single" || str == L"å–®æ¬¡") return ScriptRunMode::Single;
+    else if (str == L"continuous" || str == L"é€£çºŒ")  return ScriptRunMode::Continuous;
+    else if (str == L"switch" || str == L"åˆ‡æ›") return ScriptRunMode::Switch;
     return std::nullopt;
 }
 
 std::wstring ScriptRunModeToString(ScriptRunMode mode) {
 #ifdef _LANG_ZH_TW_
     switch (mode) {
+    case ScriptRunMode::FullSingle:
+        return L"å®Œæ•´å–®æ¬¡";
+    case ScriptRunMode::FullContinuous:
+        return L"å®Œæ•´é€£çºŒ";
+    case ScriptRunMode::FullSwitch:
+        return L"å®Œæ•´åˆ‡æ›";
     case ScriptRunMode::Single:
-        return L"³æ¦¸";
+        return L"å–®æ¬¡";
     case ScriptRunMode::Continuous:
-        return L"³sÄò";
+        return L"é€£çºŒ";
     case ScriptRunMode::Switch:
-        return L"¤Á´«";
+        return L"åˆ‡æ›";
     }
 #else
     switch (mode) {
+    case ScriptRunMode::FullSingle:
+        return L"FullSingle";
+    case ScriptRunMode::FullContinuous:
+        return L"FullContinuous";
+    case ScriptRunMode::FullSwitch:
+        return L"FullSwitch";
     case ScriptRunMode::Single:
         return L"Single";
     case ScriptRunMode::Continuous:
@@ -567,8 +583,7 @@ bool ParseHotkeyModifier(std::string_view value, HotkeyData& out) {
     if (value == "ctrldown") {
         out.ctrl = KeyModifierRequirement::MustDown;
         return true;
-    } else if (value == "ctrlup")
-    {
+    } else if (value == "ctrlup") {
         out.ctrl = KeyModifierRequirement::MustUp;
         return true;
     } else if (value == "shiftdown") {
@@ -649,9 +664,18 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
     size_t closeParen = line.rfind(')');
     if (openParen == std::wstring::npos || closeParen == std::wstring::npos || closeParen < openParen) {
 #ifdef _LANG_ZH_TW_
-        outError = L"¯Ê¤Ö©ÎµL®Äªº¬A¸¹ '()'";
+        outError = L"ç¼ºå°‘æˆ–ç„¡æ•ˆçš„æ‹¬è™Ÿ '()'";
 #else
         outError = L"Missing or invalid parentheses '()'";
+#endif
+        return false;
+    }
+
+    if (line.size() - 1 != closeParen) {
+#ifdef _LANG_ZH_TW_
+        outError = L"æ‹¬è™Ÿ ')' å¾Œé¢ä¸æ‡‰è©²æœ‰å…¶ä»–æ–‡å­—ï¼Œå¦‚æœ‰éœ€è¦å¯ä»¥å°‡æ–‡å­—åŠ åœ¨ # ä¹‹å¾Œ;";
+#else
+        outError = L"Trailing characters found after closing parenthesis ')', If needed, you can add text after #.";
 #endif
         return false;
     }
@@ -660,12 +684,12 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
     std::wstring args = std::wstring(StringTrim(StringLower(line.substr(openParen + 1, closeParen - openParen - 1))));
 
     try {
-        if (func == L"setstartkey" || func == L"setendkey" || func == L"³]©w¶}©l«öÁä" || func == L"³]©w°±¤î«öÁä") {
-            outCmd.type = (func == L"setstartkey" || func == L"³]©w¶}©l«öÁä") ? CmdType::SetStartKey : CmdType::SetEndKey;
+        if (func == L"setstartkey" || func == L"setendkey" || func == L"è¨­å®šé–‹å§‹æŒ‰éµ" || func == L"è¨­å®šåœæ­¢æŒ‰éµ") {
+            outCmd.type = (func == L"setstartkey" || func == L"è¨­å®šé–‹å§‹æŒ‰éµ") ? CmdType::SetStartKey : CmdType::SetEndKey;
             HotkeyData hotkey;
             if (!ParseHotkeyData(args, hotkey)) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº«öÁä®æ¦¡: " + args;
+                outError = L"ç„¡æ•ˆçš„æŒ‰éµæ ¼å¼: " + args;
 #else
                 outError = L"Invalid hotkey format: " + args;
 #endif
@@ -674,11 +698,11 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
             outCmd.args = hotkey;
             return true;
         }
-        else if (func == L"setrunmode" || func == L"³]©w¹B¦æ¼Ò¦¡") {
+        else if (func == L"setrunmode" || func == L"è¨­å®šé‹è¡Œæ¨¡å¼") {
             auto runMode = ScriptRunModeFromString(args);
             if (!runMode.has_value()) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº¹B¦æ¼Ò¦¡¤Ş¼Æ: " + args;
+                outError = L"ç„¡æ•ˆçš„é‹è¡Œæ¨¡å¼å¼•æ•¸: " + args;
 #else
                 outError = L"Invalid run mode parameter: " + args;
 #endif
@@ -688,13 +712,13 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
             outCmd.args = runMode.value();
             return true;
         }
-        else if (func == L"delay" || func == L"©µ¿ğ") {
+        else if (func == L"delay" || func == L"å»¶é²") {
             outCmd.type = CmdType::Delay;
             int64_t num;
             auto utf8Args = Utf16ToUtf8(args);
             if (!StringToInt<int64_t>(utf8Args, num)) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº©µ¿ğ¤Ş¼Æ (¥²¶·¬°¾ã¼Æ): " + args;
+                outError = L"ç„¡æ•ˆçš„å»¶é²å¼•æ•¸ (å¿…é ˆç‚ºæ•´æ•¸): " + args;
 #else
                 outError = L"Invalid delay parameter (must be an integer): " + args;
 #endif
@@ -703,21 +727,21 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
             outCmd.args = num;
             return true;
         }
-        else if (func == L"mousedown" || func == L"mouseup" || func == L"·Æ¹««ö¤U" || func == L"·Æ¹«©ñ¶}") {
+        else if (func == L"mousedown" || func == L"mouseup" || func == L"æ»‘é¼ æŒ‰ä¸‹" || func == L"æ»‘é¼ æ”¾é–‹") {
             auto type = MouseButtonTypeFromString(args);
             if (!type.has_value()) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº·Æ¹««öÁä¤Ş¼Æ: " + args;
+                outError = L"ç„¡æ•ˆçš„æ»‘é¼ æŒ‰éµå¼•æ•¸: " + args;
 #else
                 outError = L"Invalid mouse button parameter: " + args;
 #endif
                 return false;
             }
-            outCmd.type = (func == L"mousedown" || func == L"·Æ¹««ö¤U") ? CmdType::MouseDown : CmdType::MouseUp;
+            outCmd.type = (func == L"mousedown" || func == L"æ»‘é¼ æŒ‰ä¸‹") ? CmdType::MouseDown : CmdType::MouseUp;
             outCmd.args = type.value();
             return true;
         }
-        else if (func == L"absolutemove" || func == L"relativemove" || func == L"µ´¹ï²¾°Ê" || func == L"¬Û¹ï²¾°Ê") {
+        else if (func == L"absolutemove" || func == L"relativemove" || func == L"çµ•å°ç§»å‹•" || func == L"ç›¸å°ç§»å‹•") {
             auto splitView = args | std::views::split(',');
 
             std::vector<int32_t> splitArgs;
@@ -728,7 +752,7 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
                 s = StringTrim(s);
                 if (!StringToInt<int32_t>(s, num)) {
 #ifdef _LANG_ZH_TW_
-                    outError = L"µL®Äªº®y¼Ğ¤Ş¼Æ (¥²¶·¬°¾ã¼Æ): " + args;
+                    outError = L"ç„¡æ•ˆçš„åº§æ¨™å¼•æ•¸ (å¿…é ˆç‚ºæ•´æ•¸): " + args;
 #else
                     outError = L"Invalid coordinate parameter (must be integers): " + args;
 #endif
@@ -739,20 +763,20 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
 
             if (splitArgs.size() != 2) {
 #ifdef _LANG_ZH_TW_
-                outError = L"²¾°Ê«ü¥O¥u»İ­n2­Ó¤Ş¼Æ (x, y): " + args;
+                outError = L"ç§»å‹•æŒ‡ä»¤åªéœ€è¦2å€‹å¼•æ•¸ (x, y): " + args;
 #else
                 outError = L"Move command expects exactly 2 parameters (x, y): " + args;
 #endif
                 return false;
             }
 
-            outCmd.type = (func == L"absolutemove" || func == L"µ´¹ï²¾°Ê") ? CmdType::MouseAbsoluteMove : CmdType::MouseRelativeMove;
+            outCmd.type = (func == L"absolutemove" || func == L"çµ•å°ç§»å‹•") ? CmdType::MouseAbsoluteMove : CmdType::MouseRelativeMove;
             outCmd.args = std::move(splitArgs);
             return true;
         }
-        else if (func == L"keyboarddown" || func == L"keyboardup" || func == L"Áä½L«ö¤U" || func == L"Áä½L©ñ¶}") {
+        else if (func == L"keyboarddown" || func == L"keyboardup" || func == L"éµç›¤æŒ‰ä¸‹" || func == L"éµç›¤æ”¾é–‹") {
             auto key = GetKeyByName(args);
-            outCmd.type = (func == L"keyboarddown" || func == L"Áä½L«ö¤U") ? CmdType::KeyboardDown : CmdType::KeyboardUp;
+            outCmd.type = (func == L"keyboarddown" || func == L"éµç›¤æŒ‰ä¸‹") ? CmdType::KeyboardDown : CmdType::KeyboardUp;
             if (key.has_value() && key > 0 && key < 65536) {
                 outCmd.args = (uint16_t)key.value();
                 return true;
@@ -761,7 +785,7 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
             uint16_t num = 0;
             if (!StringToInt<uint16_t>(utf8Args, num)) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº«öÁä¦WºÙ©Î«öÁä½s¸¹: " + args;
+                outError = L"ç„¡æ•ˆçš„æŒ‰éµåç¨±æˆ–æŒ‰éµç·¨è™Ÿ: " + args;
 #else
                 outError = L"Invalid key parameter or virtual key code: " + args;
 #endif
@@ -770,22 +794,22 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
             outCmd.args = (uint16_t)num;
             return true;
         }
-        else if (func == L"wheeldown" || func == L"wheelup" || func == L"ºu½ü¤U" || func == L"ºu½ü¤W") {
+        else if (func == L"wheeldown" || func == L"wheelup" || func == L"æ»¾è¼ªä¸‹" || func == L"æ»¾è¼ªä¸Š") {
             if (!args.empty()) {
 #ifdef _LANG_ZH_TW_
-                outError = L"ºu½ü«ü¥O¤£±µ¦¬¤Ş¼Æ: " + args;
+                outError = L"æ»¾è¼ªæŒ‡ä»¤ä¸æ¥æ”¶å¼•æ•¸: " + args;
 #else
                 outError = L"Wheel command does not accept parameters: " + args;
 #endif
                 return false;
             }
-            outCmd.type = (func == L"wheeldown" || func == L"ºu½ü¤U") ? CmdType::WheelDown : CmdType::WheelUp;
+            outCmd.type = (func == L"wheeldown" || func == L"æ»¾è¼ªä¸‹") ? CmdType::WheelDown : CmdType::WheelUp;
             return true;
         }
-        else if (func == L"showcoordinate" || func == L"Åã¥Ü®y¼Ğ") {
+        else if (func == L"showcoordinate" || func == L"é¡¯ç¤ºåº§æ¨™") {
             if (!args.empty()) {
 #ifdef _LANG_ZH_TW_
-                outError = L"Åã¥Ü®y¼Ğ«ü¥O¤£±µ¦¬¤Ş¼Æ: " + args;
+                outError = L"é¡¯ç¤ºåº§æ¨™æŒ‡ä»¤ä¸æ¥æ”¶å¼•æ•¸: " + args;
 #else
                 outError = L"ShowCoordinate command does not accept parameters: " + args;
 #endif
@@ -793,35 +817,35 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
             }
             outCmd.type = CmdType::ShowCoordinate;
             return true;
-        } else if (func == L"outputtext" || func == L"¿é¥X¤å¦r") {
-            size_t firstQuote = args.find_first_of(L"\"'");
-            if (firstQuote == std::wstring::npos) {
+        } else if (func == L"outputtext" || func == L"è¼¸å‡ºæ–‡å­—") {
+            size_t startQuote = args.find_first_of(L"\"'");
+            if (startQuote == std::wstring::npos) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº¤å¦r®æ¦¡¡]¤å¦rÀ³¸Ó³Q\"\"©Î''¥]³ò¡^: " + args;
+                outError = L"ç„¡æ•ˆçš„æ–‡å­—æ ¼å¼ï¼ˆæ–‡å­—æ‡‰è©²è¢«\"\"æˆ–''åŒ…åœï¼‰: " + args;
 #else
                 outError = L"Invalid string format (expected quoted string): " + args;
 #endif
                 return false;
             }
 
-            wchar_t quote = args[firstQuote];
-            size_t secondQuote = args.rfind(quote, firstQuote + 1);
-            if (secondQuote == std::wstring::npos) {
+            wchar_t quote = args[startQuote];
+            size_t endQuote = args.find_last_of(quote);
+            if (endQuote == std::wstring::npos) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº¤å¦r®æ¦¡(¥¼³¬¦Xªº¤Ş¸¹): " + args;
+                outError = L"ç„¡æ•ˆçš„æ–‡å­—æ ¼å¼(æœªé–‰åˆçš„å¼•è™Ÿ): " + args;
 #else
                 outError = L"Invalid string format (unclosed quote): " + args;
 #endif
                 return false;
             }
 
-            std::wstring stringPart = args.substr(0, secondQuote + 1);
-            std::wstring_view remaining = StringTrim(args.substr(secondQuote + 1));
+            std::wstring stringPart = args.substr(0, endQuote + 1);
+            std::wstring_view remaining = StringTrim(std::wstring_view(args).substr(endQuote + 1));
 
             std::wstring text;
             if (!ParseStringArg(stringPart, text)) {
 #ifdef _LANG_ZH_TW_
-                outError = L"µL®Äªº¦r¦ê®æ¦¡¡]À³¬°¤Ş¸¹¦r¦ê¡^: " + args;
+                outError = L"ç„¡æ•ˆçš„å­—ä¸²æ ¼å¼ï¼ˆæ‡‰ç‚ºå¼•è™Ÿå­—ä¸²ï¼‰: " + args;
 #else
                 outError = L"Invalid string format (expected quoted string): " + args;
 #endif
@@ -835,7 +859,7 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
                     auto utf8Delay = Utf16ToUtf8(delayStr);
                     if (!StringToInt<int64_t>(utf8Delay, delayMs)) {
 #ifdef _LANG_ZH_TW_
-                        outError = L"µL®Äªº©µ¿ğ¤Ş¼Æ (¥²¶·¬°¾ã¼Æ): " + args;
+                        outError = L"ç„¡æ•ˆçš„å»¶é²å¼•æ•¸ (å¿…é ˆç‚ºæ•´æ•¸): " + args;
 #else
                         outError = L"Invalid delay parameter (must be an integer): " + args;
 #endif
@@ -844,7 +868,7 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
                 }
                 else {
 #ifdef _LANG_ZH_TW_
-                    outError = L"µL®Äªº¤Ş¼Æ®æ¦¡: " + args;
+                    outError = L"ç„¡æ•ˆçš„å¼•æ•¸æ ¼å¼: " + args;
 #else
                     outError = L"Invalid parameter format: " + args;
 #endif
@@ -858,7 +882,7 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
         }
     } catch (...) {
 #ifdef _LANG_ZH_TW_
-        outError = L"¸ÑªR¸Ó¦æ®Éµo¥Í¥¼ª¾ªº¨Ò¥~ª¬ªp¡C";
+        outError = L"è§£æè©²è¡Œæ™‚ç™¼ç”ŸæœªçŸ¥çš„ä¾‹å¤–ç‹€æ³ã€‚";
 #else
         outError = L"An unexpected exception occurred during line parsing.";
 #endif
@@ -866,7 +890,7 @@ bool ParseScriptLine(const std::wstring& line, ParsedCommand& outCmd, std::wstri
     }
 
 #ifdef _LANG_ZH_TW_
-    outError = L"¥¼ª¾ªº«ü¥O: " + func;
+    outError = L"æœªçŸ¥çš„æŒ‡ä»¤: " + func;
 #else
     outError = L"Unknown function: " + func;
 #endif
@@ -891,21 +915,23 @@ bool ValidateAndParseScript(
 
     for (const auto& rawLine : lines) {
         lineNumber++;
+
         std::wstring line = std::wstring(StringTrim(rawLine));
         size_t commnentPos = line.find('#');
         if (commnentPos != std::string::npos) {
-            line = line.substr(0, commnentPos);
+            line = std::wstring(StringTrim(line.substr(0, commnentPos)));
         }
 
-        if (line.empty()) 
+        if (line.empty()) {
             continue;
+        }
 
         ParsedCommand cmd;
         std::wstring outError;
         if (!ParseScriptLine(line, cmd, outError)) {
             outErrorLine = lineNumber;
 #ifdef _LANG_ZH_TW_
-            outErrorMsg = std::format(L"¸}¥»¿ù»~\r\n{}\r\n¦æ¼Æ: {}:\r\n\"{}\"", outError, lineNumber, rawLine);
+            outErrorMsg = std::format(L"è…³æœ¬éŒ¯èª¤\r\n{}\r\nè¡Œæ•¸: {}:\r\n\"{}\"", outError, lineNumber, rawLine);
 #else
             outErrorMsg = std::format(L"Syntax Error\r\n{}\r\nLine {}:\r\n\"{}\"", outError, lineNumber, rawLine);
 #endif // _LANG_ZH_TW_
@@ -916,7 +942,7 @@ bool ValidateAndParseScript(
             if (startKey.key != 0) {
                 outErrorLine = lineNumber;
 #ifdef _LANG_ZH_TW_
-                outErrorMsg = std::format(L"¸}¥»¿ù»~\r\n¤w¸g³]©w¤F¶}©l«öÁä\r\n¦æ¼Æ: {}:\r\n\"{}\"\r\n", lineNumber, rawLine);
+                outErrorMsg = std::format(L"è…³æœ¬éŒ¯èª¤\r\nå·²ç¶“è¨­å®šäº†é–‹å§‹æŒ‰éµ\r\nè¡Œæ•¸: {}:\r\n\"{}\"\r\n", lineNumber, rawLine);
 #else
                 outErrorMsg = std::format(L"Syntax Error\r\nStart Key already defined\r\nLine {}:\r\n\"{}\"", lineNumber, rawLine);
 #endif // _LANG_ZH_TW_
@@ -927,7 +953,7 @@ bool ValidateAndParseScript(
             if (endKey.key != 0) {
                 outErrorLine = lineNumber;
 #ifdef _LANG_ZH_TW_
-                outErrorMsg = std::format(L"¸}¥»¿ù»~¡A¦æ¼Æ: {}:\r\n\"{}\"\r\n¤w¸g³]©w¤F°±¤î«öÁä", lineNumber, rawLine);
+                outErrorMsg = std::format(L"è…³æœ¬éŒ¯èª¤ï¼Œè¡Œæ•¸: {}:\r\n\"{}\"\r\nå·²ç¶“è¨­å®šäº†åœæ­¢æŒ‰éµ", lineNumber, rawLine);
 #else
                 outErrorMsg = std::format(L"Syntax Error\r\nEnd Key already defined\r\nLine {}:\r\n\"{}\"", lineNumber, rawLine);
 #endif // _LANG_ZH_TW_
@@ -938,7 +964,7 @@ bool ValidateAndParseScript(
             if (scriptRunMode.has_value()) {
                 outErrorLine = lineNumber;
 #ifdef _LANG_ZH_TW_
-                outErrorMsg = std::format(L"¸}¥»¿ù»~¡A¦æ¼Æ: {}:\r\n\"{}\"\r\n¤w¸g³]©w¤F¹B¦æ¼Ò¦¡", lineNumber, rawLine);
+                outErrorMsg = std::format(L"è…³æœ¬éŒ¯èª¤ï¼Œè¡Œæ•¸: {}:\r\n\"{}\"\r\nå·²ç¶“è¨­å®šäº†é‹è¡Œæ¨¡å¼", lineNumber, rawLine);
 #else
                 outErrorMsg = std::format(L"Syntax Error\r\nRun Mode already defined\r\nLine {}:\r\n\"{}\"", lineNumber, rawLine);
 #endif // _LANG_ZH_TW_
@@ -951,14 +977,14 @@ bool ValidateAndParseScript(
     }
     outStartKey = startKey;
     outEndKey = endKey;
-    outRunMode = scriptRunMode.has_value() ? scriptRunMode.value() : ScriptRunMode::Single;
+    outRunMode = scriptRunMode.has_value() ? scriptRunMode.value() : ScriptRunMode::FullSingle;
     return true;
 }
 
-void ExecuteParsedCommand(std::stop_token stopToken, const ParsedCommand& cmd) {
+void ExecuteParsedCommand(const std::atomic<bool>& isForceStopRequested, const ParsedCommand& cmd) {
     switch (cmd.type) {
     case CmdType::Delay:
-        InputSim::Delay(stopToken, std::any_cast<int64_t>(cmd.args));
+        InputSim::Delay(isForceStopRequested, std::any_cast<int64_t>(cmd.args));
         break;
     case CmdType::MouseDown:
         InputSim::MouseDown(std::any_cast<MouseButtonType>(cmd.args));
@@ -993,23 +1019,24 @@ void ExecuteParsedCommand(std::stop_token stopToken, const ParsedCommand& cmd) {
         break;
     case CmdType::OutputText: {
         const auto& data = std::any_cast<const OutputTextData&>(cmd.args);
-        InputSim::OutputText(stopToken, data.text, data.delayMs);
+        InputSim::OutputText(isForceStopRequested, data.text, data.delayMs);
         break;
     }
     }
 }
+
 void ExecuteScriptWorker(std::stop_token stopToken, ScriptData& data) {
     data.isRunning = true;
     if (data.preExecute != nullptr) data.preExecute();
     do {
         for (const auto& cmd : data.commands) {
-            if (stopToken.stop_requested() || data.isStopRequested) break;
-            ExecuteParsedCommand(stopToken, cmd);
+            if (data.isForceStopRequested) break;
+            ExecuteParsedCommand(data.isForceStopRequested, cmd);
         }
 
-        if (data.mode == ScriptRunMode::Single) break;
+        if (data.mode == ScriptRunMode::FullSingle) break;
 
-    } while (!stopToken.stop_requested() && !data.isStopRequested);
+    } while (!stopToken.stop_requested() && !data.isForceStopRequested);
 
     data.isRunning = false;
     if (data.postExecute != nullptr) data.postExecute(false);
@@ -1048,17 +1075,20 @@ bool StartScriptExecution(ScriptData& data) {
     if (data.isRunning) {
         return false;
     }
-    data.isStopRequested = false;
+    data.isForceStopRequested = false;
     data.executeThread = std::jthread(ExecuteScriptWorker, std::ref(data));
     return true;
 }
 
-bool StopScriptExecution(ScriptData& data, bool waitScriptEnd) {
+bool StopScriptExecution(ScriptData& data, bool forceStop, bool waitScriptEnd) {
     if (!data.isRunning) {
         return false;
     }
 
-    data.isStopRequested = true;
+    auto mode = data.mode;
+    if (mode == ScriptRunMode::Single || mode == ScriptRunMode::Continuous || mode == ScriptRunMode::Switch) {
+        data.isForceStopRequested = true;
+    }
     if (data.executeThread.joinable()) {
         data.executeThread.request_stop();
         if (waitScriptEnd) data.executeThread.join();

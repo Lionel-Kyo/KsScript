@@ -1,10 +1,10 @@
-#include "pch.h"
+Ôªø#include "pch.h"
 #include "MainDlg.h"
 
-CMainDlg::CMainDlg(CWnd* pParent) : CDialog(IDD_MAIN_DIALOG, pParent) {}
+CMainDlg::CMainDlg(CWnd* pParent) : CDarkDialogBase(IDD_MAIN_DIALOG, pParent) {}
 
 void CMainDlg::DoDataExchange(CDataExchange* pDX) {
-    CDialog::DoDataExchange(pDX);
+    CDarkDialogBase::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_BTN_LOAD_SCRIPTS, m_btnLoadScripts);
     DDX_Control(pDX, IDC_BTN_OPEN_RECORD, m_btnOpenRecordDlg);
     DDX_Control(pDX, IDC_BTN_OPEN_FUNCTIONS_REF, m_btnOpenFunctionsRefDlg);
@@ -12,14 +12,13 @@ void CMainDlg::DoDataExchange(CDataExchange* pDX) {
     DDX_Control(pDX, IDC_LST_SCRIPTS, m_lstScripts);
 }
 
-BEGIN_MESSAGE_MAP(CMainDlg, CDialog)
+BEGIN_MESSAGE_MAP(CMainDlg, CDarkDialogBase)
     ON_WM_SIZE()
     ON_WM_CLOSE()
     ON_BN_CLICKED(IDC_BTN_LOAD_SCRIPTS, &CMainDlg::OnBtnLoadScripts)
     ON_BN_CLICKED(IDC_BTN_OPEN_RECORD, &CMainDlg::OnBtnOpenRecordDlg)
     ON_BN_CLICKED(IDC_BTN_OPEN_FUNCTIONS_REF, &CMainDlg::OnBtnOpenFunctionsRefDlg)
     ON_BN_CLICKED(IDC_BTN_OPEN_KEYS_REF, &CMainDlg::OnBtnOpenKeysRefDlg)
-    ON_NOTIFY(NM_CUSTOMDRAW, IDC_LST_SCRIPTS, &CMainDlg::OnNMCustomdrawLstScripts)
     ON_NOTIFY(HDN_ITEMCHANGED, 0, &CMainDlg::OnHeaderItemChanged)
     ON_NOTIFY(NM_CLICK, IDC_LST_SCRIPTS, &CMainDlg::OnNMClickLstScripts)
     ON_NOTIFY(NM_RCLICK, IDC_LST_SCRIPTS, &CMainDlg::OnNMRClickLstScripts)
@@ -27,7 +26,7 @@ BEGIN_MESSAGE_MAP(CMainDlg, CDialog)
 END_MESSAGE_MAP()
 
 BOOL CMainDlg::OnInitDialog() {
-    CDialog::OnInitDialog();
+    CDarkDialogBase::OnInitDialog();
 
     HICON hIcon = AfxGetApp()->LoadIcon(IDI_APP_ICON);
     if (hIcon != nullptr) {
@@ -35,11 +34,20 @@ BOOL CMainDlg::OnInitDialog() {
         SetIcon(hIcon, FALSE);
     }
 
+    // Enable owner-draw dynamically for buttons so RC doesn't need BS_OWNERDRAW flags
+    m_btnLoadScripts.ModifyStyle(0, BS_OWNERDRAW);
+    m_btnOpenRecordDlg.ModifyStyle(0, BS_OWNERDRAW);
+    m_btnOpenFunctionsRefDlg.ModifyStyle(0, BS_OWNERDRAW);
+    m_btnOpenKeysRefDlg.ModifyStyle(0, BS_OWNERDRAW);
+
+    //// Apply dark mode to ListView
+    //DarkTheme::ApplyDarkStyleToListCtrl(m_lstScripts);
+
 #ifdef _LANG_ZH_TW_
-    m_btnLoadScripts.SetWindowTextW(_T("≈™®˙∏}•ª"));
-    m_btnOpenRecordDlg.SetWindowTextW(_T("∏}•ª∞Oø˝æπ"));
-    m_btnOpenFunctionsRefDlg.SetWindowTextW(_T("∏}•ª´¸•Oª°©˙"));
-    m_btnOpenKeysRefDlg.SetWindowTextW(_T("¡‰ΩL´ˆ¡‰ª°©˙"));
+    m_btnLoadScripts.SetWindowTextW(_T("ËÆÄÂèñËÖ≥Êú¨"));
+    m_btnOpenRecordDlg.SetWindowTextW(_T("ËÖ≥Êú¨Ë®òÈåÑÂô®"));
+    m_btnOpenFunctionsRefDlg.SetWindowTextW(_T("ËÖ≥Êú¨Êåá‰ª§Ë™™Êòé"));
+    m_btnOpenKeysRefDlg.SetWindowTextW(_T("ÈçµÁõ§ÊåâÈçµË™™Êòé"));
 #else
     m_btnLoadScripts.SetWindowTextW(_T("Open Scripts"));
     m_btnOpenRecordDlg.SetWindowTextW(_T("Script Recorder"));
@@ -55,12 +63,13 @@ BOOL CMainDlg::OnInitDialog() {
         LVS_EX_GRIDLINES //|
         //LVS_EX_CHECKBOXES
     );
+    m_lstScripts.SetPostItemCustomDraw([this](NMHDR* pNMHDR, LRESULT* pResult) { OnNMCustomdrawLstScripts(pNMHDR, pResult); });
 #ifdef _LANG_ZH_TW_
-    m_lstScripts.InsertColumn(0, _T("∂}±“"), LVCFMT_CENTER, 60);
-    m_lstScripts.InsertColumn(1, _T("∏}•ª¶W∫Ÿ"), LVCFMT_LEFT, 240);
-    m_lstScripts.InsertColumn(2, _T("πB¶Êº“¶°"), LVCFMT_LEFT, 120);
-    m_lstScripts.InsertColumn(3, _T("∂}©l´ˆ¡‰"), LVCFMT_LEFT, 120);
-    m_lstScripts.InsertColumn(4, _T("∞±§Ó´ˆ¡‰"), LVCFMT_LEFT, 120);
+    m_lstScripts.InsertColumn(0, _T("ÈñãÂïü"), LVCFMT_CENTER, 60);
+    m_lstScripts.InsertColumn(1, _T("ËÖ≥Êú¨ÂêçÁ®±"), LVCFMT_LEFT, 240);
+    m_lstScripts.InsertColumn(2, _T("ÈÅãË°åÊ®°Âºè"), LVCFMT_LEFT, 120);
+    m_lstScripts.InsertColumn(3, _T("ÈñãÂßãÊåâÈçµ"), LVCFMT_LEFT, 120);
+    m_lstScripts.InsertColumn(4, _T("ÂÅúÊ≠¢ÊåâÈçµ"), LVCFMT_LEFT, 120);
 #else
     m_lstScripts.InsertColumn(0, _T("Enable"), LVCFMT_CENTER, 60);
     m_lstScripts.InsertColumn(1, _T("Script Name"), LVCFMT_LEFT, 240);
@@ -68,6 +77,7 @@ BOOL CMainDlg::OnInitDialog() {
     m_lstScripts.InsertColumn(3, _T("Start Key"), LVCFMT_LEFT, 120);
     m_lstScripts.InsertColumn(4, _T("End Key"), LVCFMT_LEFT, 120);
 #endif // _LANG_ZH_TW_
+
 
     CRect rect;
     GetClientRect(&rect);
@@ -83,19 +93,19 @@ BOOL CMainDlg::PreTranslateMessage(MSG* pMsg) {
         return TRUE;
     }
 
-    return CDialog::PreTranslateMessage(pMsg);
+    return CDarkDialogBase::PreTranslateMessage(pMsg);
 }
 
 bool CMainDlg::LoadScriptEntry(const std::wstring& filePath, std::wstring& outErrorContent, std::wstring& outErrorTitle, ScriptEntry& outEntry) {
     ScriptEntry entry;
     entry.filePath = filePath;
-    entry.fileName = std::filesystem::path(filePath).filename().wstring();;
+    entry.fileName = std::filesystem::path(filePath).filename().wstring();
 
     std::vector<std::wstring> fileLines;
     if (!ReadUtf8FileLines(entry.filePath, fileLines)) {
 #ifdef _LANG_ZH_TW_
-        outErrorContent = std::format(L"≈™®˙UTF-8 .txt∏}•ª§Â•Û•¢±—\r\n{}", entry.filePath);
-        outErrorTitle = L"§Â•Ûø˘ª~";
+        outErrorContent = std::format(L"ËÆÄÂèñUTF-8 .txtËÖ≥Êú¨Êñá‰ª∂Â§±Êïó\r\n{}", entry.filePath);
+        outErrorTitle = L"Êñá‰ª∂ÈåØË™§";
 #else
         outErrorContent = std::format(L"Failed to read UTF-8 script file.\r\n{}", entry.filePath);
         outErrorTitle = L"File Error";
@@ -113,17 +123,17 @@ bool CMainDlg::LoadScriptEntry(const std::wstring& filePath, std::wstring& outEr
     if (!ValidateAndParseScript(fileLines, startKey, endKey, runMode, parsedCommands, errorMsg, errorLine)) {
         outErrorContent = errorMsg;
 #ifdef _LANG_ZH_TW_
-        outErrorTitle = L"∏}•ªø˘ª~";
+        outErrorTitle = L"ËÖ≥Êú¨ÈåØË™§";
 #else
         outErrorTitle = L"Script Syntax Error";
 #endif // _LANG_ZH_TW_
         return false;
     }
     switch (runMode) {
-    case ScriptRunMode::Single:
+    case ScriptRunMode::FullSingle:
         endKey = HotkeyData();
         break;
-    case ScriptRunMode::Continuous:
+    case ScriptRunMode::FullContinuous:
         endKey = startKey;
         break;
     }
@@ -326,8 +336,16 @@ void CMainDlg::OnNMClickLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
     cellRect.right = cellRect.left + m_lstScripts.GetColumnWidth(0);
 
     if (cellRect.PtInRect(pNMItemActivate->ptAction)) {
-        const bool checked = m_lstScripts.GetCheck(row) != FALSE;
-        m_lstScripts.SetCheck(row, checked ? 0 : 1);
+        const bool lastChecked = m_lstScripts.GetCheck(row) != FALSE;
+        if (lastChecked) {
+            m_lstScripts.SetCheck(row, FALSE);
+            std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
+            auto& entry = MainHelper::GetInstance().LoadedScripts().at(row);
+            StopScriptExecution(entry.data, true, false);
+        }
+        else {
+            m_lstScripts.SetCheck(row, TRUE);
+        }
         m_lstScripts.RedrawItems(row, row);
         return;
     }
@@ -352,24 +370,20 @@ void CMainDlg::OnNMRClickLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
 
     bool isRowEnabled = m_lstScripts.GetCheck(row) != FALSE;
 #ifdef _LANG_ZH_TW_
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_ENABLE_ALL, _T("∂}±“•˛≥°∏}•ª"));
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_DISABLE_ALL, _T("√ˆ≥¨•˛≥°∏}•ª"));
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_REMOVE_ALL, _T("≤æ∞£•˛≥°∏}•ª"));
-    menu.AppendMenu(MF_SEPARATOR);
     if (isRowEnabled) {
-        menu.AppendMenu(MF_STRING, ID_SCRIPT_OFF, _T("√ˆ≥¨∏}•ª"));
+        menu.AppendMenu(MF_STRING, ID_SCRIPT_OFF, _T("ÈóúÈñâËÖ≥Êú¨"));
     }
     else {
-        menu.AppendMenu(MF_STRING, ID_SCRIPT_ON, _T("∂}±“∏}•ª"));
+        menu.AppendMenu(MF_STRING, ID_SCRIPT_ON, _T("ÈñãÂïüËÖ≥Êú¨"));
     }
     menu.AppendMenu(MF_SEPARATOR);
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_REMOVE, _T("≤æ∞£∏}•ª"));
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_RELOAD, _T("≠´∑s≈™®˙"));
-#else
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_ENABLE_ALL, _T("Enable All"));
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_DISABLE_ALL, _T("Disable All"));
-    menu.AppendMenu(MF_STRING, ID_SCRIPT_REMOVE_ALL, _T("Remove All"));
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_REMOVE, _T("ÁßªÈô§ËÖ≥Êú¨"));
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_RELOAD, _T("ÈáçÊñ∞ËÆÄÂèñ"));
     menu.AppendMenu(MF_SEPARATOR);
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_ENABLE_ALL, _T("ÈñãÂïüÂÖ®ÈÉ®ËÖ≥Êú¨"));
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_DISABLE_ALL, _T("ÈóúÈñâÂÖ®ÈÉ®ËÖ≥Êú¨"));
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_REMOVE_ALL, _T("ÁßªÈô§ÂÖ®ÈÉ®ËÖ≥Êú¨"));
+#else
     if (isRowEnabled) {
         menu.AppendMenu(MF_STRING, ID_SCRIPT_OFF, _T("Off"));
     }
@@ -379,6 +393,10 @@ void CMainDlg::OnNMRClickLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
     menu.AppendMenu(MF_SEPARATOR);
     menu.AppendMenu(MF_STRING, ID_SCRIPT_REMOVE, _T("Remove"));
     menu.AppendMenu(MF_STRING, ID_SCRIPT_RELOAD, _T("Reload"));
+    menu.AppendMenu(MF_SEPARATOR);
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_ENABLE_ALL, _T("Enable All"));
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_DISABLE_ALL, _T("Disable All"));
+    menu.AppendMenu(MF_STRING, ID_SCRIPT_REMOVE_ALL, _T("Remove All"));
 #endif // _LANG_ZH_TW_
 
     CPoint pt;
@@ -414,7 +432,7 @@ void CMainDlg::OnNMRClickLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
         m_lstScripts.DeleteAllItems();
         auto& entries = MainHelper::GetInstance().LoadedScripts();
         for (auto& entry : entries) {
-            StopScriptExecution(entry.data, false);
+            StopScriptExecution(entry.data, true, false);
         }
         entries.clear();
     }
@@ -424,7 +442,7 @@ void CMainDlg::OnNMRClickLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
         m_lstScripts.SetCheck(row, TRUE);
         break;
 
-    case ID_SCRIPT_OFF:
+    case ID_SCRIPT_OFF: 
         m_lstScripts.SetCheck(row, FALSE);
         break;
 
@@ -433,7 +451,7 @@ void CMainDlg::OnNMRClickLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
             std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
             m_lstScripts.DeleteItem(row);
             auto& entry = MainHelper::GetInstance().LoadedScripts().at(row);
-            StopScriptExecution(entry.data, false);
+            StopScriptExecution(entry.data, true, false);
             MainHelper::GetInstance().LoadedScripts().erase(MainHelper::GetInstance().LoadedScripts().begin() + row);
         }
         break;
@@ -442,7 +460,7 @@ void CMainDlg::OnNMRClickLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
         {
             std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
             auto& oldEntry = MainHelper::GetInstance().LoadedScripts().at(row);
-            StopScriptExecution(oldEntry.data, false);
+            StopScriptExecution(oldEntry.data, true, false);
             ScriptEntry entry;
             std::wstring errorContent;
             std::wstring errorTitle;
@@ -484,12 +502,19 @@ void CMainDlg::OnLvnItemchangedLstScripts(NMHDR* pNMHDR, LRESULT* pResult) {
 }
 
 void CMainDlg::OnSize(UINT nType, int cx, int cy) {
-    CDialog::OnSize(nType, cx, cy);
+    CDarkDialogBase::OnSize(nType, cx, cy);
     ResizeDlg(cx, cy);
 }
 
 void CMainDlg::OnClose() {
     MainHelper::GetInstance().StopKeyboardHook();
-    CDialog::OnClose();
+    {
+        std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
+        auto& entries = MainHelper::GetInstance().LoadedScripts();
+        for (auto& entry : entries) {
+            StopScriptExecution(entry.data, true, false);
+        }
+    }
+    CDarkDialogBase::OnClose();
 }
 

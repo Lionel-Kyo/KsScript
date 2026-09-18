@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #define _AFXDLL
 #include <afxwin.h>
 #include <afxext.h>

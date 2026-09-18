@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include <windows.h>
+#include <dwmapi.h>
 #include <any>
 #include <fstream>
 #include <sstream>
@@ -17,6 +18,7 @@
 #include <optional>
 #include <cwctype>
 #include <functional>
+#include "Theme/ThemeColors.h"
 
 enum class CmdType {
     None,
@@ -245,7 +247,7 @@ std::optional<int32_t> GetKeyByName(std::wstring_view name);
 std::optional<std::wstring> GetNameByKey(int32_t vk);
 
 namespace InputSim {
-    bool Delay(std::stop_token stopToken, int64_t ms);
+    bool Delay(const std::atomic<bool>& isForceStopRequested, int64_t ms);
     void MouseDown(MouseButtonType type);
     void MouseUp(MouseButtonType type);
     void MouseAbsoluteMove(int32_t x, int32_t y);
@@ -255,14 +257,21 @@ namespace InputSim {
     void KeyboardUp(uint16_t vkCode);
     void Wheel(bool up);
     void ShowCoordinate();
-    void OutputText(std::stop_token stopToken, const std::wstring& text, int64_t ms);
+    void OutputText(const std::atomic<bool>& isForceStopRequested, const std::wstring& text, int64_t ms);
 }
 
 enum class ScriptRunMode {
+    // Complete full command batch before stopping
+    FullSingle,
+    FullContinuous,
+    FullSwitch,
+
+    // Stop immediately on current command
     Single,
     Continuous,
     Switch
 };
+
 std::optional<ScriptRunMode> ScriptRunModeFromString(const std::wstring& str);
 std::wstring ScriptRunModeToString(ScriptRunMode mode);
 
@@ -309,10 +318,10 @@ struct ScriptData {
     std::vector<ParsedCommand> commands;
     HotkeyData startKey;
     HotkeyData endKey;
-    ScriptRunMode mode{ ScriptRunMode::Single };
+    ScriptRunMode mode{ ScriptRunMode::FullSingle };
     std::atomic<bool> isEnabled{ false };
     std::atomic<bool> isRunning{ false };
-    std::atomic<bool> isStopRequested{ false };
+    std::atomic<bool> isForceStopRequested{ false };
     std::jthread executeThread;
     std::function<void()> preExecute;
     std::function<void(bool hasError)> postExecute;
@@ -329,7 +338,7 @@ struct ScriptData {
         , mode(other.mode)
         , isEnabled(other.isEnabled.load())
         , isRunning(other.isRunning.load())
-        , isStopRequested(other.isStopRequested.load())
+        , isForceStopRequested(other.isForceStopRequested.load())
         , executeThread(std::move(other.executeThread))
         , preExecute(std::move(other.preExecute))
         , postExecute(std::move(other.postExecute)) {}
@@ -342,7 +351,7 @@ struct ScriptData {
             mode = other.mode;
             isEnabled.store(other.isEnabled.load());
             isRunning.store(other.isRunning.load());
-            isStopRequested.store(other.isStopRequested.load());
+            isForceStopRequested.store(other.isForceStopRequested.load());
             executeThread = std::move(other.executeThread);
             preExecute = std::move(other.preExecute);
             postExecute = std::move(other.postExecute);
@@ -375,6 +384,6 @@ bool ValidateAndParseScript(
 bool ReadUtf8FileLines(const std::wstring& filePath, std::vector<std::wstring>& outLines);
 
 bool StartScriptExecution(ScriptData& data);
-bool StopScriptExecution(ScriptData& data, bool waitScriptEnd);
+bool StopScriptExecution(ScriptData& data, bool forceStop, bool waitScriptEnd);
 
 bool CListCtrlPreTranslateMessageClipboard(MSG* pMsg, const CDialog* dlg, const CListCtrl& listCtrl);

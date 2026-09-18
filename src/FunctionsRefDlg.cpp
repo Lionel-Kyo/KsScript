@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "FunctionsRefDlg.h"
 
 CFunctionsRefDlg::CFunctionsRefDlg(CWnd* pParent, std::function<void()> onDestory) {
@@ -25,16 +25,16 @@ BOOL CFunctionsRefDlg::OnInitDialog() {
     }
 
 #ifdef _LANG_ZH_TW_
-    SetWindowTextW(_T("¸}¥»«ü¥O»¡©ú"));
+    SetWindowTextW(_T("è…³æœ¬æŒ‡ä»¤èªªæ˜"));
 #else
     SetWindowTextW(_T("Script Functions Reference"));
 #endif // _LANG_ZH_TW_
 
     m_functionList.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 #ifdef _LANG_ZH_TW_
-    m_functionList.InsertColumn(0, _T("¦WºÙ"), LVCFMT_LEFT, 180);
-    m_functionList.InsertColumn(1, _T("¤Ş¼Æ"), LVCFMT_LEFT, 180);
-    m_functionList.InsertColumn(2, _T("»¡©ú"), LVCFMT_LEFT, 380);
+    m_functionList.InsertColumn(0, _T("åç¨±"), LVCFMT_LEFT, 180);
+    m_functionList.InsertColumn(1, _T("å¼•æ•¸"), LVCFMT_LEFT, 180);
+    m_functionList.InsertColumn(2, _T("èªªæ˜"), LVCFMT_LEFT, 380);
 #else
     m_functionList.InsertColumn(0, _T("Name"), LVCFMT_LEFT, 180);
     m_functionList.InsertColumn(1, _T("Parameters"), LVCFMT_LEFT, 180);
@@ -115,26 +115,26 @@ void CFunctionsRefDlg::PopulateFunctionList() {
 
 #ifdef _LANG_ZH_TW_
     FuncInfo items[] = {
-        { _T("³]©w¶}©l«öÁä"), _T("(«öÁä, [modifiers...])"), _T("³]©w¸}¥»±Ò°ÊÄ²µoÁä¡C±µ¨ü«öÁä¦WºÙ©Î«öÁä½s¸¹¡A¥i¿ïªºmodifiers¡GCtrlDown¡BCtrlUp¡BShiftDown¡BShiftUp¡BAltDown¡BAltUp¡C") },
-        { _T("³]©w°±¤î«öÁä"), _T("(«öÁä, [modifiers...])"), _T("³]©w¸}¥»°±¤îÄ²µoÁä¡C±µ¨ü«öÁä¦WºÙ©Î«öÁä½s¸¹¡A¥i¿ïªºmodifiers¡GCtrlDown¡BCtrlUp¡BShiftDown¡BShiftUp¡BAltDown¡BAltUp¡C") },
-        { _T("³]©w¹B¦æ¼Ò¦¡"), _T("(¼Ò¦¡)"), _T("³]©w¹B¦æ¼Ò¦¡¡C¦³®Ä¼Ò¦¡¡G³æ¦¸¡B³sÄò¡B¤Á´«¡C") },
-        { _T("©µ¿ğ"), _T("(©µ¿ğ²@¬í)"), _T("±N¸}¥»°õ¦æ¼È°±«ü©wªº²@¬í¡C") },
-        { _T("·Æ¹««ö¤U"), _T("(·Æ¹««öÁä)"), _T("«ö¤U«ü©wªº·Æ¹««öÁä¡C¦³®Ä·Æ¹««öÁä¡G¥ª¡B¥k¡B¤¤¡BX1¡BX2¡C") },
-        { _T("·Æ¹«©ñ¶}"), _T("(·Æ¹««öÁä)"), _T("©ñ¶}«ü©wªº·Æ¹««öÁä¡C¦³®Ä·Æ¹««öÁä¡G¥ª¡B¥k¡B¤¤¡BX1¡BX2¡C") },
-        { _T("µ´¹ï²¾°Ê"), _T("(x, y)"), _T("±N·Æ¹«´å¼Ğ²¾°Ê¦Ü«ü©wªºµ´¹ï¿Ã¹õ®y¼Ğ (x, y)¡C") },
-        { _T("¬Û¹ï²¾°Ê"), _T("(dx, dy)"), _T("¬Û¹ï©ó¥Ø«e¦ì¸m¡A¨Ì (dx, dy) ²¾°Ê·Æ¹«´å¼Ğ¡C") },
-        { _T("Áä½L«ö¤U"), _T("(«öÁä)"), _T("«ö¤UÁä½L«öÁä¡A±µ¨ü«öÁä¦WºÙ©Î«öÁä½s¸¹¡C") },
-        { _T("Áä½L©ñ¶}"), _T("(«öÁä)"), _T("©ñ¶}Áä½L«öÁä¡A±µ¨ü«öÁä¦WºÙ©Î«öÁä½s¸¹¡C") },
-        { _T("ºu½ü¤U"), _T("()"), _T("¦V¤Uºu°Ê·Æ¹«ºu½ü¡C¦¹«ü¥O¤£»İ­n¥ô¦ó¤Ş¼Æ¡C") },
-        { _T("ºu½ü¤W"), _T("()"), _T("¦V¤Wºu°Ê·Æ¹«ºu½ü¡C¦¹«ü¥O¤£»İ­n¥ô¦ó¤Ş¼Æ¡C") },
-        { _T("Åã¥Ü®y¼Ğ"), _T("()"), _T("Åã¥Ü¥Ø«eªº´å¼Ğ¿Ã¹õ®y¼Ğ¡C¦¹«ü¥O¤£»İ­n¥ô¦ó¤Ş¼Æ¡C") },
-        { _T("¿é¥X¤å¦r"), _T("(¤å¦r, [©µ¿ğ²@¬í])"), _T("¿é¥X¤å¦r¡A¥i¿ï¶ñ¦r¤¸¶¡ªº©µ¿ğ²@¬í¼Æ¡C³æ¤Ş¸¹ ('...') ªí¥Ü¦r­±­È¡FÂù¤Ş¸¹ (\"...\") ªí¥Üescape sequences¡C") }
+        { _T("è¨­å®šé–‹å§‹æŒ‰éµ"), _T("(æŒ‰éµ, [modifiers...])"), _T("è¨­å®šè…³æœ¬å•Ÿå‹•è§¸ç™¼éµã€‚æ¥å—æŒ‰éµåç¨±æˆ–æŒ‰éµç·¨è™Ÿï¼Œå¯é¸çš„modifiersï¼šCtrlDownã€CtrlUpã€ShiftDownã€ShiftUpã€AltDownã€AltUpã€‚") },
+        { _T("è¨­å®šåœæ­¢æŒ‰éµ"), _T("(æŒ‰éµ, [modifiers...])"), _T("è¨­å®šè…³æœ¬åœæ­¢è§¸ç™¼éµã€‚æ¥å—æŒ‰éµåç¨±æˆ–æŒ‰éµç·¨è™Ÿï¼Œå¯é¸çš„modifiersï¼šCtrlDownã€CtrlUpã€ShiftDownã€ShiftUpã€AltDownã€AltUpã€‚") },
+        { _T("è¨­å®šé‹è¡Œæ¨¡å¼"), _T("(æ¨¡å¼)"), _T("è¨­å®šé‹è¡Œæ¨¡å¼ã€‚æœ‰æ•ˆæ¨¡å¼ï¼šå®Œæ•´å–®æ¬¡ã€å®Œæ•´é€£çºŒã€å®Œæ•´åˆ‡æ›ã€å–®æ¬¡ã€é€£çºŒã€åˆ‡æ›ã€‚") },
+        { _T("å»¶é²"), _T("(å»¶é²æ¯«ç§’)"), _T("å°‡è…³æœ¬åŸ·è¡Œæš«åœæŒ‡å®šçš„æ¯«ç§’ã€‚") },
+        { _T("æ»‘é¼ æŒ‰ä¸‹"), _T("(æ»‘é¼ æŒ‰éµ)"), _T("æŒ‰ä¸‹æŒ‡å®šçš„æ»‘é¼ æŒ‰éµã€‚æœ‰æ•ˆæ»‘é¼ æŒ‰éµï¼šå·¦ã€å³ã€ä¸­ã€X1ã€X2ã€‚") },
+        { _T("æ»‘é¼ æ”¾é–‹"), _T("(æ»‘é¼ æŒ‰éµ)"), _T("æ”¾é–‹æŒ‡å®šçš„æ»‘é¼ æŒ‰éµã€‚æœ‰æ•ˆæ»‘é¼ æŒ‰éµï¼šå·¦ã€å³ã€ä¸­ã€X1ã€X2ã€‚") },
+        { _T("çµ•å°ç§»å‹•"), _T("(x, y)"), _T("å°‡æ»‘é¼ æ¸¸æ¨™ç§»å‹•è‡³æŒ‡å®šçš„çµ•å°è¢å¹•åº§æ¨™ (x, y)ã€‚") },
+        { _T("ç›¸å°ç§»å‹•"), _T("(dx, dy)"), _T("ç›¸å°æ–¼ç›®å‰ä½ç½®ï¼Œä¾ (dx, dy) ç§»å‹•æ»‘é¼ æ¸¸æ¨™ã€‚") },
+        { _T("éµç›¤æŒ‰ä¸‹"), _T("(æŒ‰éµ)"), _T("æŒ‰ä¸‹éµç›¤æŒ‰éµï¼Œæ¥å—æŒ‰éµåç¨±æˆ–æŒ‰éµç·¨è™Ÿã€‚") },
+        { _T("éµç›¤æ”¾é–‹"), _T("(æŒ‰éµ)"), _T("æ”¾é–‹éµç›¤æŒ‰éµï¼Œæ¥å—æŒ‰éµåç¨±æˆ–æŒ‰éµç·¨è™Ÿã€‚") },
+        { _T("æ»¾è¼ªä¸‹"), _T("()"), _T("å‘ä¸‹æ»¾å‹•æ»‘é¼ æ»¾è¼ªã€‚æ­¤æŒ‡ä»¤ä¸éœ€è¦ä»»ä½•å¼•æ•¸ã€‚") },
+        { _T("æ»¾è¼ªä¸Š"), _T("()"), _T("å‘ä¸Šæ»¾å‹•æ»‘é¼ æ»¾è¼ªã€‚æ­¤æŒ‡ä»¤ä¸éœ€è¦ä»»ä½•å¼•æ•¸ã€‚") },
+        { _T("é¡¯ç¤ºåº§æ¨™"), _T("()"), _T("é¡¯ç¤ºç›®å‰çš„æ¸¸æ¨™è¢å¹•åº§æ¨™ã€‚æ­¤æŒ‡ä»¤ä¸éœ€è¦ä»»ä½•å¼•æ•¸ã€‚") },
+        { _T("è¼¸å‡ºæ–‡å­—"), _T("(æ–‡å­—, [å»¶é²æ¯«ç§’])"), _T("è¼¸å‡ºæ–‡å­—ï¼Œå¯é¸å¡«å­—å…ƒé–“çš„å»¶é²æ¯«ç§’æ•¸ã€‚å–®å¼•è™Ÿ ('...') è¡¨ç¤ºå­—é¢å€¼ï¼›é›™å¼•è™Ÿ (\"...\") è¡¨ç¤ºescape sequencesã€‚") }
     };
 #else
     FuncInfo items[] = {
         { _T("SetStartKey"),    _T("(key, [modifiers...])"), _T("Defines the script start trigger. Accepts a key name or VK code, with optional modifier states (CtrlDown, CtrlUp, ShiftDown, ShiftUp, AltDown, AltUp).") },
         { _T("SetEndKey"),      _T("(key, [modifiers...])"), _T("Defines the script stop trigger. Accepts a key name or VK code, with optional modifier states (CtrlDown, CtrlUp, ShiftDown, ShiftUp, AltDown, AltUp).") },
-        { _T("SetRunMode"),     _T("(mode)"),                _T("Sets execution mode. Valid modes: Single, Continuous, or Switch.") },
+        { _T("SetRunMode"),     _T("(mode)"),                _T("Sets execution mode. Valid modes: FullSingle, FullContinuous, FullSwitch, Single, Continuous, or Switch.") },
         { _T("Delay"),          _T("(ms)"),                  _T("Pauses script execution for the specified duration in milliseconds.") },
         { _T("MouseDown"),      _T("(buttonName)"),          _T("Presses a mouse button down. Valid buttons: Left, Right, Middle, X1, X2.") },
         { _T("MouseUp"),        _T("(buttonName)"),          _T("Releases a mouse button. Valid buttons: Left, Right, Middle, X1, X2.") },

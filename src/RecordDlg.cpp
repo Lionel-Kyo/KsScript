@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "RecordDlg.h"
 
 CRecordDlg::CRecordDlg(CWnd* pParent, std::function<void()> onDestory) : CDialog(IDD_RECORD_DIALOG, pParent) {
@@ -38,8 +38,8 @@ BOOL CRecordDlg::OnInitDialog() {
     //RegisterHotKey(m_hWnd, 2, 0, VK_F10);
 
 #ifdef _LANG_ZH_TW_
-    SetWindowTextW(_T("¸}¥»°O¿ı¾¹"));
-    m_btnSave.SetWindowTextW(_T("«O¦s¸}¥»"));
+    SetWindowTextW(_T("è…³æœ¬è¨˜éŒ„å™¨"));
+    m_btnSave.SetWindowTextW(_T("ä¿å­˜è…³æœ¬"));
 #else
     SetWindowTextW(_T("Script Recorder"));
     m_btnSave.SetWindowTextW(_T("Save Script"));
@@ -88,8 +88,8 @@ void CRecordDlg::SyncBufferToEdit() {
 void CRecordDlg::UpdateUIState() {
     if (RecordHelper::GetInstance().IsRecording()) {
 #ifdef _LANG_ZH_TW_
-        m_btnRecord.SetWindowTextW(_T("°±¤î°O¿ı"));
-        m_lblStatus.SetWindowTextW(_T("ª¬ºA: °O¿ı¤¤..."));
+        m_btnRecord.SetWindowTextW(_T("åœæ­¢è¨˜éŒ„"));
+        m_lblStatus.SetWindowTextW(_T("ç‹€æ…‹: è¨˜éŒ„ä¸­..."));
 #else
         m_btnRecord.SetWindowTextW(_T("Stop Rec"));
         m_lblStatus.SetWindowTextW(_T("Status: RECORDING..."));
@@ -98,8 +98,8 @@ void CRecordDlg::UpdateUIState() {
     }
     else if (RecordHelper::GetInstance().IsPlaying()) {
 #ifdef _LANG_ZH_TW_
-        m_btnPlay.SetWindowTextW(_T("°±¤î°õ¦æ"));
-        m_lblStatus.SetWindowTextW(_T("ª¬ºA: °õ¦æ¤¤..."));
+        m_btnPlay.SetWindowTextW(_T("åœæ­¢åŸ·è¡Œ"));
+        m_lblStatus.SetWindowTextW(_T("ç‹€æ…‹: åŸ·è¡Œä¸­..."));
 #else
         m_btnPlay.SetWindowTextW(_T("Stop Play"));
         m_lblStatus.SetWindowTextW(_T("Status: EXECUTING..."));
@@ -108,9 +108,9 @@ void CRecordDlg::UpdateUIState() {
     }
     else {
 #ifdef _LANG_ZH_TW_
-        m_btnRecord.SetWindowTextW(_T("°O¿ı"));
-        m_btnPlay.SetWindowTextW(_T("°õ¦æ"));
-        m_lblStatus.SetWindowTextW(_T("ª¬ºA: µL"));
+        m_btnRecord.SetWindowTextW(_T("è¨˜éŒ„"));
+        m_btnPlay.SetWindowTextW(_T("åŸ·è¡Œ"));
+        m_lblStatus.SetWindowTextW(_T("ç‹€æ…‹: ç„¡"));
 #else
         m_btnRecord.SetWindowTextW(_T("Record"));
         m_btnPlay.SetWindowTextW(_T("Play"));
@@ -143,10 +143,11 @@ void CRecordDlg::OnBtnPlay() {
         int errorLine = 0;
         if (!RecordHelper::GetInstance().GetCommands(parsedCommands, errorMsg, errorLine)) {
 #ifdef _LANG_ZH_TW_
-            ::MessageBoxW(m_hWnd, errorMsg.c_str(), L"¸}¥»¿ù»~", MB_ICONERROR | MB_OK);
+            ::MessageBoxW(m_hWnd, errorMsg.c_str(), L"è…³æœ¬éŒ¯èª¤", MB_ICONERROR | MB_OK);
 #else
             ::MessageBoxW(m_hWnd, errorMsg.c_str(), L"Script Syntax Error", MB_ICONERROR | MB_OK);
 #endif // _LANG_ZH_TW_
+            return;
         }
         RecordHelper::GetInstance().StartPlayback(parsedCommands, [this]() {
             if (m_hWnd) ::PostMessage(m_hWnd, WM_ON_SCRIPT_EXECUTE_START, 0, 0);
@@ -163,16 +164,16 @@ void CRecordDlg::OnBtnSave() {
 
 #ifdef _LANG_ZH_TW_
     std::vector<std::wstring> headers = {
-        L"³]©w¶}©l«öÁä(None)",
-        L"³]©w°±¤î«öÁä(None)",
-        L"³]©w¹B¦æ¼Ò¦¡(³æ¦¸)",
+        L"è¨­å®šé–‹å§‹æŒ‰éµ(F12)",
+        L"è¨­å®šåœæ­¢æŒ‰éµ(None)",
+        L"è¨­å®šé‹è¡Œæ¨¡å¼(å®Œæ•´å–®æ¬¡)",
         L"",
     };
 #else
     std::vector<std::wstring> headers = {
-        L"SetStartKey(None)",
+        L"SetStartKey(F12)",
         L"SetEndKey(None)",
-        L"SetRunMode(Single)",
+        L"SetRunMode(FullSingle)",
         L"",
     };
 #endif // _LANG_ZH_TW_
@@ -191,7 +192,7 @@ void CRecordDlg::OnBtnSave() {
             TCHAR szError[1024];
             ex.GetErrorMessage(szError, 1024);
 #ifdef _LANG_ZH_TW_
-            ::MessageBoxW(m_hWnd, szError, L"«O¦s¥¢±Ñ", MB_ICONERROR | MB_OK);
+            ::MessageBoxW(m_hWnd, szError, L"ä¿å­˜å¤±æ•—", MB_ICONERROR | MB_OK);
 #else
             ::MessageBoxW(m_hWnd, szError, L"Save File Failed", MB_ICONERROR | MB_OK);
 #endif // _LANG_ZH_TW_
@@ -203,16 +204,14 @@ void CRecordDlg::OnBtnSave() {
             uint8_t nextLine[] = { '\r', '\n' };
             file.Write(bom, sizeof(bom));
 
-            for (const auto& header : headers) {
-                auto utf8String = Utf16ToUtf8(header);
-                file.Write(utf8String.c_str(), static_cast<uint32_t>(utf8String.length()));
-                file.Write(nextLine, sizeof(nextLine));
-            }
+            auto combined = std::array{ std::ref(headers), std::ref(lines) };
 
-            for (const auto& line : lines) {
-                auto utf8String = Utf16ToUtf8(line);
-                file.Write(utf8String.c_str(), static_cast<uint32_t>(utf8String.length()));
-                file.Write(nextLine, sizeof(nextLine));
+            for (const auto& containerRef : combined) {
+                for (const auto& line : containerRef.get()) {
+                    auto utf8String = Utf16ToUtf8(line);
+                    file.Write(utf8String.c_str(), static_cast<uint32_t>(utf8String.length()));
+                    file.Write(nextLine, sizeof(nextLine));
+                }
             }
         } catch (CFileException* pEx) {
             pEx->ReportError();
@@ -224,7 +223,7 @@ void CRecordDlg::OnBtnSave() {
         file.Close();
 
 #ifdef _LANG_ZH_TW_
-        ::MessageBoxW(m_hWnd, std::format(L"¸}¥»¤w«O¦s¦Ü: {}", filePath.GetString()).c_str(), L"«O¦s¦¨¥\", MB_ICONERROR | MB_OK);
+        ::MessageBoxW(m_hWnd, std::format(L"è…³æœ¬å·²ä¿å­˜è‡³: {}", filePath.GetString()).c_str(), L"ä¿å­˜æˆåŠŸ", MB_ICONERROR | MB_OK);
 #else
         ::MessageBoxW(m_hWnd, std::format(L"Script is saved to: {}", filePath.GetString()).c_str(), L"Save Success", MB_ICONERROR | MB_OK);
 #endif // _LANG_ZH_TW_

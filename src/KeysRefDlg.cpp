@@ -1,4 +1,4 @@
-#include "pch.h"
+Ôªø#include "pch.h"
 #include "KeysRefDlg.h"
 
 CKeysRefDlg::CKeysRefDlg(CWnd* pParent, std::function<void()> onDestory) {
@@ -25,15 +25,15 @@ BOOL CKeysRefDlg::OnInitDialog() {
     }
 
 #ifdef _LANG_ZH_TW_
-    SetWindowTextW(_T("∏}•ª¡‰ΩL´ˆ¡‰ª°©˙"));
+    SetWindowTextW(_T("ËÖ≥Êú¨ÈçµÁõ§ÊåâÈçµË™™Êòé"));
 #else
     SetWindowTextW(_T("Script Keys Reference"));
 #endif // _LANG_ZH_TW_
 
     m_keyList.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 #ifdef _LANG_ZH_TW_
-    m_keyList.InsertColumn(0, _T("¶W∫Ÿ"), LVCFMT_LEFT, 195);
-    m_keyList.InsertColumn(1, _T("º∆≠»"), LVCFMT_LEFT, 195);
+    m_keyList.InsertColumn(0, _T("ÂêçÁ®±"), LVCFMT_LEFT, 195);
+    m_keyList.InsertColumn(1, _T("Êï∏ÂÄº"), LVCFMT_LEFT, 195);
 #else
     m_keyList.InsertColumn(0, _T("Name"), LVCFMT_LEFT, 195);
     m_keyList.InsertColumn(1, _T("Value"), LVCFMT_LEFT, 195);

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #define _AFXDLL
 #include <afxwin.h>
 #include <afxext.h>
@@ -14,19 +14,22 @@
 #include "RecordDlg.h"
 #include "FunctionsRefDlg.h"
 #include "KeysRefDlg.h"
+#include "Theme/DarkDialog.h"
+#include "Theme/DarkButton.h"
+#include "Theme/DarkListCtrl.h"
 
-class CMainDlg : public CDialog {
+class CMainDlg : public CDarkDialogBase {
 public:
     CMainDlg(CWnd* pParent = nullptr);
 
     enum { IDD = IDD_MAIN_DIALOG };
 
 protected:
-    CButton m_btnLoadScripts;
-    CButton m_btnOpenRecordDlg;
-    CButton m_btnOpenFunctionsRefDlg;
-    CButton m_btnOpenKeysRefDlg;
-    CListCtrl m_lstScripts;
+    CDarkButton m_btnLoadScripts;
+    CDarkButton m_btnOpenRecordDlg;
+    CDarkButton m_btnOpenFunctionsRefDlg;
+    CDarkButton m_btnOpenKeysRefDlg;
+    CDarkListCtrl m_lstScripts;
     CRecordDlg* m_recordDlg = nullptr;
     CFunctionsRefDlg* m_functionsRefDlg = nullptr;
     CKeysRefDlg* m_keysRefDlg = nullptr;

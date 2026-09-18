@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Theme">
+      <UniqueIdentifier>{96872049-6b19-49f3-938d-cc3f2f2867ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Theme">
+      <UniqueIdentifier>{af3d5535-3321-48e5-8873-f388e2824e04}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Main.h">
@@ -51,6 +57,18 @@
     <ClInclude Include="KeysRefDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Theme\ThemeColors.h">
+      <Filter>Header Files\Theme</Filter>
+    </ClInclude>
+    <ClInclude Include="Theme\DarkButton.h">
+      <Filter>Header Files\Theme</Filter>
+    </ClInclude>
+    <ClInclude Include="Theme\DarkDialog.h">
+      <Filter>Header Files\Theme</Filter>
+    </ClInclude>
+    <ClInclude Include="Theme\DarkListCtrl.h">
+      <Filter>Header Files\Theme</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -79,6 +97,18 @@
     </ClCompile>
     <ClCompile Include="KeysRefDlg.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Theme\DarkButton.cpp">
+      <Filter>Source Files\Theme</Filter>
+    </ClCompile>
+    <ClCompile Include="Theme\DarkDialog.cpp">
+      <Filter>Source Files\Theme</Filter>
+    </ClCompile>
+    <ClCompile Include="Theme\ThemeColors.cpp">
+      <Filter>Source Files\Theme</Filter>
+    </ClCompile>
+    <ClCompile Include="Theme\DarkListCtrl.cpp">
+      <Filter>Source Files\Theme</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

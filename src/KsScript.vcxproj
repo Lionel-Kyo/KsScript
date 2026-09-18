@@ -170,6 +170,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -191,6 +192,10 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="FunctionsRefDlg.h" />
+    <ClInclude Include="Theme\DarkButton.h" />
+    <ClInclude Include="Theme\DarkDialog.h" />
+    <ClInclude Include="Theme\DarkListCtrl.h" />
+    <ClInclude Include="Theme\ThemeColors.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="KeysRefDlg.h" />
     <ClInclude Include="Main.h" />
@@ -204,6 +209,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FunctionsRefDlg.cpp" />
+    <ClCompile Include="Theme\DarkButton.cpp" />
+    <ClCompile Include="Theme\DarkDialog.cpp" />
+    <ClCompile Include="Theme\DarkListCtrl.cpp" />
+    <ClCompile Include="Theme\ThemeColors.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="KeysRefDlg.cpp" />
     <ClCompile Include="Main.cpp" />

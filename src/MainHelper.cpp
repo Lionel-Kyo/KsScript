@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "MainHelper.h"
 
 MainHelper& MainHelper::GetInstance() {
@@ -61,8 +61,8 @@ void MainHelper::KeyboardEventWorker(std::stop_token stopToken) {
                 for (auto& entry : instance.LoadedScripts()) {
                     if (!entry.data.isEnabled) continue;
                     // Match end key first, avoid immediate check after started script when start and end is same.
-                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && entry.data.mode == ScriptRunMode::Switch && entry.data.isRunning) {
-                        StopScriptExecution(entry.data, false);
+                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && entry.data.mode == ScriptRunMode::FullSwitch && entry.data.isRunning) {
+                        StopScriptExecution(entry.data, false, false);
                     } else if (CheckIsHotkeyDown(entry.data.startKey, *data)) {
                         if (!entry.data.isRunning) StartScriptExecution(entry.data);
                     }
@@ -72,8 +72,8 @@ void MainHelper::KeyboardEventWorker(std::stop_token stopToken) {
                 std::lock_guard<std::mutex> lock(instance.LoadedScriptsMutex());
                 for (auto& entry : instance.LoadedScripts()) {
                     if (!entry.data.isEnabled) continue;
-                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && entry.data.mode == ScriptRunMode::Continuous && entry.data.isRunning) {
-                        StopScriptExecution(entry.data, false);
+                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && entry.data.mode == ScriptRunMode::FullContinuous && entry.data.isRunning) {
+                        StopScriptExecution(entry.data, false, false);
                     }
                 }
             }

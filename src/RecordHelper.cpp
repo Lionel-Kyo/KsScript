@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "RecordHelper.h"
 
 RecordHelper& RecordHelper::GetInstance() {
@@ -14,7 +14,7 @@ void RecordHelper::RecordCmd(const std::wstring& cmd) {
     std::lock_guard lock(m_scriptMutex);
     if (elapsed > 10) {
 #ifdef _LANG_ZH_TW_
-        m_scriptBuffer.push_back(std::format(L"©µ¿ð({})", elapsed));
+        m_scriptBuffer.push_back(std::format(L"å»¶é²({})", elapsed));
 #else
         m_scriptBuffer.push_back(std::format(L"Delay({})", elapsed));
 #endif // _LANG_ZH_TW
@@ -31,13 +31,13 @@ LRESULT CALLBACK RecordHelper::LowLevelKeyboardProc(int nCode, WPARAM wParam, LP
             std::wstring fnName;
             if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
 #ifdef _LANG_ZH_TW_
-                fnName = L"Áä½L«ö¤U";
+                fnName = L"éµç›¤æŒ‰ä¸‹";
 #else
                 fnName = L"KeyboardDown";
 #endif // _LANG_ZH_TW_
             } else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
 #ifdef _LANG_ZH_TW_
-                fnName = L"Áä½L©ñ¶}";
+                fnName = L"éµç›¤æ”¾é–‹";
 #else
                 fnName = L"KeyboardUp";
 #endif // _LANG_ZH_TW_
@@ -63,44 +63,44 @@ LRESULT CALLBACK RecordHelper::LowLevelMouseProc(int nCode, WPARAM wParam, LPARA
             switch (wParam) {
             case WM_LBUTTONDOWN: 
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"·Æ¹««ö¤U(¥ª)"); break;
+                instance.RecordCmd(L"æ»‘é¼ æŒ‰ä¸‹(å·¦)"); break;
 #else
                 instance.RecordCmd(L"MouseDown(Left)"); break;
 #endif // _LANG_ZH_TW_
             case WM_LBUTTONUP:   
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"·Æ¹«©ñ¶}(¥ª)"); break;
+                instance.RecordCmd(L"æ»‘é¼ æ”¾é–‹(å·¦)"); break;
 #else
                 instance.RecordCmd(L"MouseUp(Left)"); break;
 #endif // _LANG_ZH_TW_
             case WM_RBUTTONDOWN: 
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"·Æ¹««ö¤U(¥k)"); break;
+                instance.RecordCmd(L"æ»‘é¼ æŒ‰ä¸‹(å³)"); break;
 #else
                 instance.RecordCmd(L"MouseDown(Right)"); break;
 #endif // _LANG_ZH_TW_
             case WM_RBUTTONUP:   
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"·Æ¹«©ñ¶}(¥k)"); break;
+                instance.RecordCmd(L"æ»‘é¼ æ”¾é–‹(å³)"); break;
 #else
                 instance.RecordCmd(L"MouseUp(Right)"); break;
 #endif // _LANG_ZH_TW_
             case WM_MBUTTONDOWN: 
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"·Æ¹««ö¤U(¤¤)"); break;
+                instance.RecordCmd(L"æ»‘é¼ æŒ‰ä¸‹(ä¸­)"); break;
 #else
                 instance.RecordCmd(L"MouseDown(Middle)"); break;
 #endif // _LANG_ZH_TW_
             case WM_MBUTTONUP:   
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"·Æ¹«©ñ¶}(¤¤)"); break;
+                instance.RecordCmd(L"æ»‘é¼ æ”¾é–‹(ä¸­)"); break;
 #else
                 instance.RecordCmd(L"MouseUp(Middle)"); break;
 #endif // _LANG_ZH_TW_
             case WM_MOUSEWHEEL: {
                 short delta = GET_WHEEL_DELTA_WPARAM(mouse->mouseData);
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(delta > 0 ? L"ºu½ü¤W()" : L"ºu½ü¤U()");
+                instance.RecordCmd(delta > 0 ? L"æ»¾è¼ªä¸Š()" : L"æ»¾è¼ªä¸‹()");
 #else
                 instance.RecordCmd(delta > 0 ? L"WheelUp()" : L"WheelDown()");
 #endif // _LANG_ZH_TW_
@@ -108,7 +108,7 @@ LRESULT CALLBACK RecordHelper::LowLevelMouseProc(int nCode, WPARAM wParam, LPARA
             }
             case WM_MOUSEMOVE:
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(std::format(L"µ´¹ï²¾°Ê({}, {})", mouse->pt.x, mouse->pt.y));
+                instance.RecordCmd(std::format(L"çµ•å°ç§»å‹•({}, {})", mouse->pt.x, mouse->pt.y));
 #else
                 instance.RecordCmd(std::format(L"AbsoluteMove({}, {})", mouse->pt.x, mouse->pt.y));
 #endif // _LANG_ZH_TW_
@@ -152,7 +152,7 @@ bool RecordHelper::GetCommands(std::vector<ParsedCommand>& outParsed, std::wstri
 void RecordHelper::StartPlayback(const std::vector<ParsedCommand>& commands, std::function<void()> preExecute, std::function<void(bool hasError)> postExecute) {
     if (m_scriptData.isRunning) return;
     m_scriptData.commands = commands;
-    m_scriptData.mode = ScriptRunMode::Single;
+    m_scriptData.mode = ScriptRunMode::FullSingle;
     m_scriptData.isEnabled = true;
     m_scriptData.preExecute = preExecute;
     m_scriptData.postExecute = postExecute;
@@ -160,7 +160,7 @@ void RecordHelper::StartPlayback(const std::vector<ParsedCommand>& commands, std
 }
 
 void RecordHelper::StopPlayback() {
-    StopScriptExecution(m_scriptData, true);
+    StopScriptExecution(m_scriptData, true, true);
 }
 
 void RecordHelper::GetScriptBuffer(std::vector<std::wstring>& outBuffer) {

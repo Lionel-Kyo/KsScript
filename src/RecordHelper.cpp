@@ -6,7 +6,7 @@ RecordHelper& RecordHelper::GetInstance() {
     return instance;
 }
 
-void RecordHelper::RecordCmd(const std::wstring& cmd) {
+void RecordHelper::RecordCmd(const std::u8string& cmd) {
     auto now = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastRecordTime).count();
     m_lastRecordTime = now;
@@ -14,9 +14,9 @@ void RecordHelper::RecordCmd(const std::wstring& cmd) {
     std::lock_guard lock(m_scriptMutex);
     if (elapsed > 10) {
 #ifdef _LANG_ZH_TW_
-        m_scriptBuffer.push_back(std::format(L"延遲({})", elapsed));
+        m_scriptBuffer.push_back(u8"延遲" + ToU8StringUnchecked(std::format("({})", elapsed)));
 #else
-        m_scriptBuffer.push_back(std::format(L"Delay({})", elapsed));
+        m_scriptBuffer.push_back(u8"Delay" + ToU8StringUnchecked(std::format("({})", elapsed)));
 #endif // _LANG_ZH_TW
     }
     m_scriptBuffer.push_back(cmd);
@@ -28,26 +28,25 @@ LRESULT CALLBACK RecordHelper::LowLevelKeyboardProc(int nCode, WPARAM wParam, LP
         auto* kbd = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
         if (!(kbd->flags & LLKHF_INJECTED)) {
             auto keyName = GetNameByKey(kbd->vkCode);
-            std::wstring fnName;
+            std::u8string fnName;
             if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
 #ifdef _LANG_ZH_TW_
-                fnName = L"鍵盤按下";
+                fnName = u8"鍵盤按下";
 #else
-                fnName = L"KeyboardDown";
+                fnName = u8"KeyboardDown";
 #endif // _LANG_ZH_TW_
             } else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
 #ifdef _LANG_ZH_TW_
-                fnName = L"鍵盤放開";
+                fnName = u8"鍵盤放開";
 #else
-                fnName = L"KeyboardUp";
+                fnName = u8"KeyboardUp";
 #endif // _LANG_ZH_TW_
             }
             if (!fnName.empty()) {
                 if (keyName.has_value()) {
-                    instance.RecordCmd(std::format(L"{}({})", fnName, keyName.value()));
-                }
-                else {
-                    instance.RecordCmd(std::format(L"{}(0x{:X})", fnName, kbd->vkCode));
+                    instance.RecordCmd(ToU8StringUnchecked(std::format("{}({})", ToStringUnchecked(fnName), ToStringUnchecked(keyName.value()))));
+                } else {
+                    instance.RecordCmd(ToU8StringUnchecked(std::format("{}(0x{:X})", ToStringUnchecked(fnName), kbd->vkCode)));
                 }
             }
         }
@@ -63,54 +62,54 @@ LRESULT CALLBACK RecordHelper::LowLevelMouseProc(int nCode, WPARAM wParam, LPARA
             switch (wParam) {
             case WM_LBUTTONDOWN: 
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"滑鼠按下(左)"); break;
+                instance.RecordCmd(u8"滑鼠按下(左)"); break;
 #else
-                instance.RecordCmd(L"MouseDown(Left)"); break;
+                instance.RecordCmd(u8"MouseDown(Left)"); break;
 #endif // _LANG_ZH_TW_
             case WM_LBUTTONUP:   
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"滑鼠放開(左)"); break;
+                instance.RecordCmd(u8"滑鼠放開(左)"); break;
 #else
-                instance.RecordCmd(L"MouseUp(Left)"); break;
+                instance.RecordCmd(u8"MouseUp(Left)"); break;
 #endif // _LANG_ZH_TW_
             case WM_RBUTTONDOWN: 
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"滑鼠按下(右)"); break;
+                instance.RecordCmd(u8"滑鼠按下(右)"); break;
 #else
-                instance.RecordCmd(L"MouseDown(Right)"); break;
+                instance.RecordCmd(u8"MouseDown(Right)"); break;
 #endif // _LANG_ZH_TW_
             case WM_RBUTTONUP:   
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"滑鼠放開(右)"); break;
+                instance.RecordCmd(u8"滑鼠放開(右)"); break;
 #else
-                instance.RecordCmd(L"MouseUp(Right)"); break;
+                instance.RecordCmd(u8"MouseUp(Right)"); break;
 #endif // _LANG_ZH_TW_
             case WM_MBUTTONDOWN: 
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"滑鼠按下(中)"); break;
+                instance.RecordCmd(u8"滑鼠按下(中)"); break;
 #else
-                instance.RecordCmd(L"MouseDown(Middle)"); break;
+                instance.RecordCmd(u8"MouseDown(Middle)"); break;
 #endif // _LANG_ZH_TW_
             case WM_MBUTTONUP:   
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(L"滑鼠放開(中)"); break;
+                instance.RecordCmd(u8"滑鼠放開(中)"); break;
 #else
-                instance.RecordCmd(L"MouseUp(Middle)"); break;
+                instance.RecordCmd(u8"MouseUp(Middle)"); break;
 #endif // _LANG_ZH_TW_
             case WM_MOUSEWHEEL: {
                 short delta = GET_WHEEL_DELTA_WPARAM(mouse->mouseData);
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(delta > 0 ? L"滾輪上()" : L"滾輪下()");
+                instance.RecordCmd(delta > 0 ? u8"滾輪上()" : u8"滾輪下()");
 #else
-                instance.RecordCmd(delta > 0 ? L"WheelUp()" : L"WheelDown()");
+                instance.RecordCmd(delta > 0 ? u8"WheelUp()" : u8"WheelDown()");
 #endif // _LANG_ZH_TW_
                 break;
             }
             case WM_MOUSEMOVE:
 #ifdef _LANG_ZH_TW_
-                instance.RecordCmd(std::format(L"絕對移動({}, {})", mouse->pt.x, mouse->pt.y));
+                instance.RecordCmd(u8"絕對移動" + ToU8StringUnchecked(std::format("({}, {})", mouse->pt.x, mouse->pt.y)));
 #else
-                instance.RecordCmd(std::format(L"AbsoluteMove({}, {})", mouse->pt.x, mouse->pt.y));
+                instance.RecordCmd(u8"AbsoluteMove" + ToU8StringUnchecked(std::format("({}, {})", mouse->pt.x, mouse->pt.y)));
 #endif // _LANG_ZH_TW_
                 break;
             }
@@ -134,8 +133,8 @@ void RecordHelper::StopRecording() {
     m_keyboardHook = nullptr;
 }
 
-bool RecordHelper::GetCommands(std::vector<ParsedCommand>& outParsed, std::wstring& outErrorMsg, int& outErrorLine) {
-    std::vector<std::wstring> copy;
+bool RecordHelper::GetCommands(std::vector<ParsedCommand>& outParsed, std::u8string& outErrorMsg, int& outErrorLine) {
+    std::vector<std::u8string> copy;
     {
         std::lock_guard lock(m_scriptMutex);
         copy = m_scriptBuffer;
@@ -163,12 +162,12 @@ void RecordHelper::StopPlayback() {
     StopScriptExecution(m_scriptData, true, true);
 }
 
-void RecordHelper::GetScriptBuffer(std::vector<std::wstring>& outBuffer) {
+void RecordHelper::GetScriptBuffer(std::vector<std::u8string>& outBuffer) {
     std::lock_guard lock(m_scriptMutex);
     outBuffer = m_scriptBuffer;
 }
 
-void RecordHelper::SetScriptBuffer(const std::vector<std::wstring>& inBuffer) {
+void RecordHelper::SetScriptBuffer(const std::vector<std::u8string>& inBuffer) {
     std::lock_guard lock(m_scriptMutex);
     m_scriptBuffer = inBuffer;
 }

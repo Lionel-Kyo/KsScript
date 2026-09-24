@@ -1,4 +1,6 @@
 ﻿#pragma once
+#ifndef _MAIN_HELPER_H_
+#define _MAIN_HELPER_H_
 
 #include <Windows.h>
 #include <thread>
@@ -12,7 +14,6 @@
 #include <format>
 #include <functional>
 #include <unordered_map>
-#include "Resource.h"
 #include "Utils.h"
 
 class MainHelper {
@@ -35,3 +36,5 @@ private:
     static void KeyboardEventWorker(std::stop_token stopToken);
     static LRESULT LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 };
+
+#endif // !_MAIN_HELPER_H_

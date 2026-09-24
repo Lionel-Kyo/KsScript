@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "MainHelper.h"
+#include "res/Resource.h"
 
 MainHelper& MainHelper::GetInstance() {
     static MainHelper instance;
@@ -61,18 +62,17 @@ void MainHelper::KeyboardEventWorker(std::stop_token stopToken) {
                 for (auto& entry : instance.LoadedScripts()) {
                     if (!entry.data.isEnabled) continue;
                     // Match end key first, avoid immediate check after started script when start and end is same.
-                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && entry.data.mode == ScriptRunMode::FullSwitch && entry.data.isRunning) {
+                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && (entry.data.mode == ScriptRunMode::Switch || entry.data.mode == ScriptRunMode::FullSwitch) && entry.data.isRunning) {
                         StopScriptExecution(entry.data, false, false);
                     } else if (CheckIsHotkeyDown(entry.data.startKey, *data)) {
                         if (!entry.data.isRunning) StartScriptExecution(entry.data);
                     }
                 }
-            }
-            else {
+            } else {
                 std::lock_guard<std::mutex> lock(instance.LoadedScriptsMutex());
                 for (auto& entry : instance.LoadedScripts()) {
                     if (!entry.data.isEnabled) continue;
-                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && entry.data.mode == ScriptRunMode::FullContinuous && entry.data.isRunning) {
+                    if (CheckIsHotkeyDown(entry.data.endKey, *data) && (entry.data.mode == ScriptRunMode::Continuous || entry.data.mode == ScriptRunMode::FullContinuous) && entry.data.isRunning) {
                         StopScriptExecution(entry.data, false, false);
                     }
                 }
@@ -109,7 +109,7 @@ LRESULT CALLBACK MainHelper::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPAR
                     auto kv = instance.m_keyboardDown.find(vkCode);
                     if (kv == instance.m_keyboardDown.end()) return false;
                     return kv->second;
-                    };
+                };
                 auto* data = new KeyboardEventData{
                     .vkCode = (int32_t)kbd->vkCode,
                     .isDown = isDown.value(),

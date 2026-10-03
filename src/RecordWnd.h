@@ -24,7 +24,7 @@ public:
 private:
     static void SyncEditToBuffer();
     static void SyncBufferToEdit();
-    static bool SaveScriptToFile(HWND hwnd);
+    static bool SaveScriptToFile(HWND hwnd, const std::u8string& startKey, const std::u8string& endKey, const std::u8string& runMode);
 };
 
 #endif // !_RECORD_WND_H_

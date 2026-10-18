@@ -194,6 +194,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"KsScriptAppClass", nullptr };
     ::RegisterClassExW(&wc);
     HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"KsScript", WS_OVERLAPPEDWINDOW, 100, 100, 600, 500, nullptr, nullptr, wc.hInstance, nullptr);
+    DragAcceptFiles(hwnd, TRUE);
     EnableDarkTitleBar(hwnd);
 
     if (!CreateDeviceD3D(hwnd)) {
@@ -521,6 +522,31 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
             return 0;
         break;
+    case WM_DROPFILES: {
+        HDROP hDrop = reinterpret_cast<HDROP>(wParam);
+        UINT fileCount = DragQueryFileW(hDrop, 0xFFFFFFFF, NULL, 0);
+
+        std::vector<std::u8string> droppedPaths;
+        for (UINT i = 0; i < fileCount; ++i) {
+            UINT nameLen = DragQueryFileW(hDrop, i, NULL, 0) + 1;
+            std::vector<wchar_t> filePathBuf(nameLen, L'\0');
+
+            if (DragQueryFileW(hDrop, i, filePathBuf.data(), nameLen) > 0) {
+                std::wstring filePath(filePathBuf.data());
+
+                if (std::filesystem::path(filePath).extension() == L".txt") {
+                    droppedPaths.push_back(wstringToU8String(filePath));
+                }
+            }
+        }
+
+        DragFinish(hDrop);
+
+        if (!droppedPaths.empty()) {
+            MainWnd::ProcessScriptFiles(droppedPaths);
+        }
+        return 0;
+    }
     case WM_DESTROY:
         ::PostQuitMessage(0);
         return 0;

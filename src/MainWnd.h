@@ -29,6 +29,7 @@ class MainWnd {
 public:
     static void RenderWindow(HWND hwnd);
     static ImMessageBox& MsgBox();
+    static void ProcessScriptFiles(const std::vector<std::u8string>& filePaths);
 
 private:
     inline static std::vector<MainTableRow> s_tableRows = {};

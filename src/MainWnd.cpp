@@ -133,37 +133,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
 #endif
         std::vector<std::u8string> filePaths;
         if (OpenScriptFilesDialog(hwnd, filePaths)) {
-            for (const auto& path : filePaths) {
-                ScriptEntry entry;
-                std::u8string errContent, errTitle;
-
-                if (!LoadScriptEntry(path, errContent, errTitle, entry)) {
-                    MsgBox().Show(errContent, errTitle);
-                    break;
-                }
-
-                s_tableRows.push_back({
-                    .isEnabled=false,
-                    .filePath=entry.filePath,
-                    .fileName=entry.fileName,
-                    .mode=ScriptRunModeToString(entry.data.mode),
-                    .startKey= HotkeyDataToString(entry.data.startKey),
-                    .endKey= HotkeyDataToString(entry.data.endKey),
-                });
-
-                std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
-                auto& scripts = MainHelper::GetInstance().LoadedScripts();
-                for (size_t i = 0; i < scripts.size(); ++i) {
-                    try {
-                        if (std::filesystem::equivalent(scripts[i].filePath, entry.filePath)) {
-                            s_tableRows.erase(s_tableRows.begin() + i);
-                            scripts.erase(scripts.begin() + i);
-                        }
-                    }
-                    catch (const std::filesystem::filesystem_error& e) { }
-                }
-                scripts.push_back(std::move(entry));
-            }
+            ProcessScriptFiles(filePaths);
         }
     }
 
@@ -431,4 +401,38 @@ void MainWnd::RenderWindow(HWND hwnd) {
 ImMessageBox& MainWnd::MsgBox() {
     static ImMessageBox instance;
     return instance;
+}
+
+void MainWnd::ProcessScriptFiles(const std::vector<std::u8string>& filePaths) {
+    for (const auto& path : filePaths) {
+        ScriptEntry entry;
+        std::u8string errContent, errTitle;
+
+        if (!LoadScriptEntry(path, errContent, errTitle, entry)) {
+            MsgBox().Show(errContent, errTitle);
+            break;
+        }
+
+        s_tableRows.push_back({
+            .isEnabled = false,
+            .filePath = entry.filePath,
+            .fileName = entry.fileName,
+            .mode = ScriptRunModeToString(entry.data.mode),
+            .startKey = HotkeyDataToString(entry.data.startKey),
+            .endKey = HotkeyDataToString(entry.data.endKey),
+            });
+
+        std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
+        auto& scripts = MainHelper::GetInstance().LoadedScripts();
+        for (size_t i = 0; i < scripts.size(); ++i) {
+            try {
+                if (std::filesystem::equivalent(scripts[i].filePath, entry.filePath)) {
+                    s_tableRows.erase(s_tableRows.begin() + i);
+                    scripts.erase(scripts.begin() + i);
+                }
+            }
+            catch (const std::filesystem::filesystem_error&) {}
+        }
+        scripts.push_back(std::move(entry));
+    }
 }

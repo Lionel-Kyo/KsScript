@@ -238,6 +238,8 @@ std::u8string StringLower(std::u8string_view input);
 
 bool StringEqualIgnoreCase(std::u8string_view a, std::u8string_view b);
 
+std::u8string JoinU8Strings(const std::vector<std::u8string>& vec, std::u8string_view delim);
+
 std::istream& u8getline(std::istream& input, std::u8string& u8str, char8_t delim = u8'\n');
 
 

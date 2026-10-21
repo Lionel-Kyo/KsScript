@@ -30,22 +30,39 @@ void RecordWnd::SyncBufferToEdit() {
     }
 }
 
-bool RecordWnd::SaveScriptToFile(HWND hwnd, const std::u8string& startKey, const std::u8string& endKey, const std::u8string& runMode) {
+bool RecordWnd::SaveScriptToFile(
+    HWND hwnd, 
+    const std::u8string& startKey, 
+    std::vector<std::u8string> startKeyModifiers, 
+    const std::u8string& endKey,
+    std::vector<std::u8string> endKeyModifiers,
+    const std::u8string& runMode
+) {
     SyncEditToBuffer();
     std::vector<std::u8string> lines;
     RecordHelper::GetInstance().GetScriptBuffer(lines);
 
+    std::vector<std::u8string> combinedStartKeys;
+    combinedStartKeys.reserve(1 + startKeyModifiers.size());
+    combinedStartKeys.push_back(startKey);
+    combinedStartKeys.insert(combinedStartKeys.end(), startKeyModifiers.begin(), startKeyModifiers.end());
+
+    std::vector<std::u8string> combinedEndKeys;
+    combinedEndKeys.reserve(1 + endKeyModifiers.size());
+    combinedEndKeys.push_back(endKey);
+    combinedEndKeys.insert(combinedEndKeys.end(), endKeyModifiers.begin(), endKeyModifiers.end());
+
 #ifdef _LANG_ZH_TW_
     std::vector<std::u8string> headers = {
-        u8"設定開始按鍵(" + startKey + u8")",
-        u8"設定停止按鍵(" + endKey + u8")",
+        u8"設定開始按鍵(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
+        u8"設定停止按鍵(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
         u8"設定運行模式(" + runMode + u8")",
         u8"",
     };
 #else
     std::vector<std::u8string> headers = {
-        u8"SetStartKey(" + startKey + u8")",
-        u8"SetEndKey(" + endKey + u8")",
+        u8"SetStartKey(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
+        u8"SetEndKey(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
         u8"SetRunMode(" + runMode + u8")",
         u8"",
     };
@@ -182,126 +199,23 @@ void RecordWnd::RenderWindow(HWND hwnd, bool* pOpen) {
 
 #ifdef _LANG_ZH_TW_
     if (ImGui::Button("保存腳本")) {
-        ImGui::OpenPopup("保存腳本");
+        s_changeKeyAndModePopUp.Open("保存腳本", std::nullopt, std::nullopt, std::nullopt);
     }
 #else
     if (ImGui::Button("Save Script")) {
-        ImGui::OpenPopup("Save Script");
+        s_changeKeyAndModePopUp.Open("Save Script", std::nullopt, std::nullopt, std::nullopt);
     }
 #endif
 
-    static int selectedStartKeyIndex = 0;
-    static int selectedEndKeyIndex = 0;
-    static int selectedRunModeIndex = 0;
-
-    static std::vector<std::pair<std::u8string, int32_t>> s_orderedKeys;
-    static bool s_orderedKeysInitialized = false;
-    if (!s_orderedKeysInitialized) {
-        s_orderedKeys.assign(NAME_MATCH_KEYS.begin(), NAME_MATCH_KEYS.end());
-        std::sort(s_orderedKeys.begin(), s_orderedKeys.end(), [](const auto& a, const auto& b) {
-            return a.second < b.second;
-        });
-
-        for (int i = 0; i < s_orderedKeys.size(); i++) {
-            if (s_orderedKeys[i].first == u8"F12") {
-                selectedStartKeyIndex = i;
-                break;
-            }
-        }
-        s_orderedKeysInitialized = true;
-    }
-
-    // Popup
-    ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-#ifdef _LANG_ZH_TW_
-    if (ImGui::BeginPopupModal("保存腳本", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-#else
-    if (ImGui::BeginPopupModal("Save Script", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-#endif
-
-        ImGui::AlignTextToFramePadding();
-#ifdef _LANG_ZH_TW_
-        ImGui::Text("開始按鍵:");
-#else
-        ImGui::Text("StartKey:");
-#endif
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##StartKey", reinterpret_cast<const char*>(s_orderedKeys[selectedStartKeyIndex].first.c_str()))) {
-            for (int i = 0; i < s_orderedKeys.size(); i++) {
-                const bool isSelected = (selectedStartKeyIndex == i);
-                if (ImGui::Selectable(reinterpret_cast<const char*>(s_orderedKeys[i].first.c_str()), isSelected)) {
-                    selectedStartKeyIndex = i;
-                }
-                if (isSelected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-
-        ImGui::AlignTextToFramePadding();
-#ifdef _LANG_ZH_TW_
-        ImGui::Text("停止按鍵:");
-#else
-        ImGui::Text("EndKey:");
-#endif
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##EndKey", reinterpret_cast<const char*>(s_orderedKeys[selectedEndKeyIndex].first.c_str()))) {
-            for (int i = 0; i < s_orderedKeys.size(); i++) {
-                const bool isSelected = (selectedEndKeyIndex == i);
-                if (ImGui::Selectable(reinterpret_cast<const char*>(s_orderedKeys[i].first.c_str()), isSelected)) {
-                    selectedEndKeyIndex = i;
-                }
-                if (isSelected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-
-        ImGui::AlignTextToFramePadding();
-#ifdef _LANG_ZH_TW_
-        ImGui::Text("運行模式:");
-#else
-        ImGui::Text("RunMode:");
-#endif
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(150.0f);
-        if (ImGui::BeginCombo("##RunMode", reinterpret_cast<const char*>(ScriptRunModeToString(static_cast<ScriptRunMode>(selectedRunModeIndex)).c_str()))) {
-            // Last element: ScriptRunMode::Switch
-            for (int i = 0; i < static_cast<int>(static_cast<int32_t>(ScriptRunMode::Switch) + 1); i++) {
-                const bool isSelected = (selectedRunModeIndex == i);
-                if (ImGui::Selectable(reinterpret_cast<const char*>(ScriptRunModeToString(static_cast<ScriptRunMode>(i)).c_str()), isSelected)) {
-                    selectedRunModeIndex = i;
-                }
-                if (isSelected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        if (ImGui::Button("確認保存", ImVec2(120, 0))) {
-            std::u8string startKey = s_orderedKeys[selectedStartKeyIndex].first;
-            std::u8string endKey = s_orderedKeys[selectedEndKeyIndex].first;
-            std::u8string runMode = ScriptRunModeToString(static_cast<ScriptRunMode>(selectedRunModeIndex));
-
-            if (SaveScriptToFile(hwnd, startKey, endKey, runMode)) {
-                ImGui::CloseCurrentPopup();
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("取消", ImVec2(120, 0))) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
+    s_changeKeyAndModePopUp.RenderPopup(viewport, NULL, [&](
+        std::u8string startKey,
+        std::vector<std::u8string> startKeyModifiers,
+        std::u8string endKey,
+        std::vector<std::u8string> endKeyModifiers,
+        std::u8string runMode
+    ) {
+        SaveScriptToFile(hwnd, startKey, startKeyModifiers, endKey, endKeyModifiers, runMode);
+    });
 
 #ifdef _LANG_ZH_TW_
     if (isRecording) ImGui::TextColored(ImVec4(1, 0, 0, 1), "狀態: 記錄中...");

@@ -96,7 +96,119 @@ bool MainWnd::LoadScriptEntry(const std::u8string& filePath, std::u8string& outE
     return true;
 }
 
+bool MainWnd::ChangeKeyAndModePopup(
+    std::u8string filePath,
+    const std::u8string& startKey,
+    std::vector<std::u8string> startKeyModifiers,
+    const std::u8string& endKey,
+    std::vector<std::u8string> endKeyModifiers,
+    const std::u8string& runMode
+) {
+    std::vector<std::u8string> fileLines;
+    if (!ReadUtf8FileLines(filePath, fileLines)) {
+#ifdef _LANG_ZH_TW_
+        MsgBox().Show(u8"無法讀取檔案以進行修改", u8"保存失敗");
+#else
+        MsgBox().Show(u8"Failed to read file for modification", u8"Save Failed");
+#endif
+        return false;
+    }
+
+    std::vector<std::u8string> filteredLines;
+    for (const auto& line : fileLines) {
+        std::u8string trimmedLine = std::u8string(StringTrim(line));
+
+        bool isHeader = false;
+        if (!trimmedLine.empty()) {
+            size_t openParen = trimmedLine.find(u8'(');
+            size_t closeParen = trimmedLine.rfind(u8')');
+            if (openParen != std::u8string::npos && closeParen != std::u8string::npos && closeParen > openParen) {
+                std::u8string func = std::u8string(StringTrim(StringLower(std::u8string_view(trimmedLine).substr(0, openParen))));
+                if (func == u8"設定開始按鍵" || func == u8"setstartkey" ||
+                    func == u8"設定停止按鍵" || func == u8"setendkey" ||
+                    func == u8"設定運行模式" || func == u8"setrunmode") {
+                    isHeader = true;
+                }
+            }
+        }
+
+        if (!isHeader) {
+            filteredLines.push_back(line);
+        }
+    }
+
+    // Remove leading empty lines left behind
+    while (!filteredLines.empty() && std::u8string(StringTrim(filteredLines.front())).empty()) {
+        filteredLines.erase(filteredLines.begin());
+    }
+
+    // Build new headers
+    std::vector<std::u8string> combinedStartKeys;
+    combinedStartKeys.reserve(1 + startKeyModifiers.size());
+    combinedStartKeys.push_back(startKey);
+    combinedStartKeys.insert(combinedStartKeys.end(), startKeyModifiers.begin(), startKeyModifiers.end());
+
+    std::vector<std::u8string> combinedEndKeys;
+    combinedEndKeys.reserve(1 + endKeyModifiers.size());
+    combinedEndKeys.push_back(endKey);
+    combinedEndKeys.insert(combinedEndKeys.end(), endKeyModifiers.begin(), endKeyModifiers.end());
+
+#ifdef _LANG_ZH_TW_
+    std::vector<std::u8string> headers = {
+        u8"設定開始按鍵(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
+        u8"設定停止按鍵(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
+        u8"設定運行模式(" + runMode + u8")",
+        u8"",
+    };
+#else
+    std::vector<std::u8string> headers = {
+        u8"SetStartKey(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
+        u8"SetEndKey(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
+        u8"SetRunMode(" + runMode + u8")",
+        u8"",
+    };
+#endif
+
+    // Prepend headers to filtered lines
+    filteredLines.insert(filteredLines.begin(), headers.begin(), headers.end());
+
+    // Write back to file
+    std::ofstream file(std::filesystem::path(u8stringToWString(filePath)), std::ios::binary);
+    if (!file.is_open()) {
+#ifdef _LANG_ZH_TW_
+        MsgBox().Show(u8"無法開啟檔案以進行寫入", u8"保存失敗");
+#else
+        MsgBox().Show(u8"Failed to open file for writing", u8"Save File Failed");
+#endif
+        return false;
+    }
+
+    try {
+        uint8_t bom[] = { 0xEF, 0xBB, 0xBF };
+        uint8_t nextLine[] = { '\r', '\n' };
+        file.write(reinterpret_cast<char*>(bom), sizeof(bom));
+
+        for (const auto& line : filteredLines) {
+            file.write(reinterpret_cast<const char*>(line.c_str()), static_cast<std::streamsize>(line.length()));
+            file.write(reinterpret_cast<const char*>(nextLine), sizeof(nextLine));
+        }
+    }
+    catch (...) {
+        file.close();
+#ifdef _LANG_ZH_TW_
+        MsgBox().Show(u8"寫入檔案時發生未預期的錯誤", u8"保存失敗");
+#else
+        MsgBox().Show(u8"An unexpected error occurred while writing to file", u8"Save File Failed");
+#endif
+        return false;
+    }
+    file.close();
+    return true;
+}
+
 void MainWnd::RenderWindow(HWND hwnd) {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+
     //ImGui::SetNextWindowSize(ImVec2(640, 480), ImGuiCond_FirstUseEver);
 
     RECT rect;
@@ -159,6 +271,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
         ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY; // |
         //ImGuiTableFlags_HighlightHoveredColumn;
 
+    bool showChangeKeyAndMode = false;
     if (ImGui::BeginTable("ScriptTable", 5, tableFlags, ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
 #ifdef _LANG_ZH_TW_
         ImGui::TableSetupColumn("開啟", ImGuiTableColumnFlags_WidthFixed, 60.0f);
@@ -294,6 +407,14 @@ void MainWnd::RenderWindow(HWND hwnd) {
 #endif
                     indexToOpenScriptLocation = static_cast<int>(i);
                 }
+#ifdef _LANG_ZH_TW_
+                if (ImGui::MenuItem("更改按鍵與模式")) {
+#else
+                if (ImGui::MenuItem("Change keys and mode")) {
+#endif
+                    s_indexToChangeKeyAndMode = static_cast<int>(i);
+                    showChangeKeyAndMode = true;
+                }
                 ImGui::EndPopup();
             }
 
@@ -302,13 +423,13 @@ void MainWnd::RenderWindow(HWND hwnd) {
             ImGui::Text("%s", reinterpret_cast<const char*>(row.fileName.c_str()));
 
             ImGui::TableSetColumnIndex(2);
-            ImGui::Text("%s", reinterpret_cast<const char*>(row.mode.c_str()));
+            ImGui::Text("%s", reinterpret_cast<const char*>(row.displayMode.c_str()));
 
             ImGui::TableSetColumnIndex(3);
-            ImGui::Text("%s", reinterpret_cast<const char*>(row.startKey.c_str()));
+            ImGui::Text("%s", reinterpret_cast<const char*>(row.displayStartKey.c_str()));
 
             ImGui::TableSetColumnIndex(4);
-            ImGui::Text("%s", reinterpret_cast<const char*>(row.endKey.c_str()));
+            ImGui::Text("%s", reinterpret_cast<const char*>(row.displayEndKey.c_str()));
 
             ImGui::PopID();
         }
@@ -331,6 +452,12 @@ void MainWnd::RenderWindow(HWND hwnd) {
                 MsgBox().Show(errC, errT);
             } else {
                 newEntry.data.isEnabled = oldEntry.data.isEnabled.load();
+                s_tableRows[indexToReload].mode = newEntry.data.mode;
+                s_tableRows[indexToReload].startKey = newEntry.data.startKey;
+                s_tableRows[indexToReload].endKey = newEntry.data.endKey;
+                s_tableRows[indexToReload].displayMode = ScriptRunModeToString(newEntry.data.mode);
+                s_tableRows[indexToReload].displayStartKey = HotkeyDataToString(newEntry.data.startKey);
+                s_tableRows[indexToReload].displayEndKey = HotkeyDataToString(newEntry.data.endKey);
                 scripts[indexToReload] = std::move(newEntry);
             }
         }
@@ -391,6 +518,53 @@ void MainWnd::RenderWindow(HWND hwnd) {
     ImGui::PopStyleVar(3);
     ImGui::End();
 
+    if (showChangeKeyAndMode) {
+#ifdef _LANG_ZH_TW_
+    s_changeKeyAndModePopUp.Open("更改按鍵與模式", s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
+#else
+        s_changeKeyAndModePopUp.Open("Change keys and mode", s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
+#endif
+    }
+
+    if (s_indexToChangeKeyAndMode != -1) {
+        s_changeKeyAndModePopUp.RenderPopup(viewport, NULL, [&](
+            std::u8string startKey,
+            std::vector<std::u8string> startKeyModifiers,
+            std::u8string endKey,
+            std::vector<std::u8string> endKeyModifiers,
+            std::u8string runMode
+            ) {
+                std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
+                auto& scripts = MainHelper::GetInstance().LoadedScripts();
+                auto& oldEntry = scripts[s_indexToChangeKeyAndMode];
+                std::u8string filePath = oldEntry.filePath;
+                if (ChangeKeyAndModePopup(filePath, startKey, startKeyModifiers, endKey, endKeyModifiers, runMode)) {
+                    StopScriptExecution(oldEntry.data, true, false);
+                    ScriptEntry newEntry;
+                    std::u8string errC, errT;
+                    if (!LoadScriptEntry(filePath, errC, errT, newEntry)) {
+                        MsgBox().Show(errC, errT);
+                    }
+                    else {
+                        newEntry.data.isEnabled = oldEntry.data.isEnabled.load();
+                        s_tableRows[s_indexToChangeKeyAndMode].mode = newEntry.data.mode;
+                        s_tableRows[s_indexToChangeKeyAndMode].startKey = newEntry.data.startKey;
+                        s_tableRows[s_indexToChangeKeyAndMode].endKey = newEntry.data.endKey;
+                        s_tableRows[s_indexToChangeKeyAndMode].displayMode = ScriptRunModeToString(newEntry.data.mode);
+                        s_tableRows[s_indexToChangeKeyAndMode].displayStartKey = HotkeyDataToString(newEntry.data.startKey);
+                        s_tableRows[s_indexToChangeKeyAndMode].displayEndKey = HotkeyDataToString(newEntry.data.endKey);
+                        scripts[s_indexToChangeKeyAndMode] = std::move(newEntry);
+#ifdef _LANG_ZH_TW_
+                        MsgBox().Show(std::format(L"腳本設定已更新: {}", u8stringToWString(filePath)), L"保存成功");
+#else
+                        MsgBox().Show(std::format(L"Script settings updated: {}", u8stringToWString(filePath)), L"Save Success");
+#endif
+                    }
+                }
+                s_indexToChangeKeyAndMode = -1;
+            });
+    }
+
     MsgBox().Render();
 
     if (s_showRecordWnd) RecordWnd::RenderWindow(hwnd, &s_showRecordWnd);
@@ -417,10 +591,13 @@ void MainWnd::ProcessScriptFiles(const std::vector<std::u8string>& filePaths) {
             .isEnabled = false,
             .filePath = entry.filePath,
             .fileName = entry.fileName,
-            .mode = ScriptRunModeToString(entry.data.mode),
-            .startKey = HotkeyDataToString(entry.data.startKey),
-            .endKey = HotkeyDataToString(entry.data.endKey),
-            });
+            .mode = entry.data.mode,
+            .startKey = entry.data.startKey,
+            .endKey = entry.data.endKey,
+            .displayMode = ScriptRunModeToString(entry.data.mode),
+            .displayStartKey = HotkeyDataToString(entry.data.startKey),
+            .displayEndKey = HotkeyDataToString(entry.data.endKey),
+        });
 
         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
         auto& scripts = MainHelper::GetInstance().LoadedScripts();

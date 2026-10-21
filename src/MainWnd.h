@@ -20,9 +20,12 @@ struct MainTableRow {
     bool isEnabled;
     std::u8string filePath;
     std::u8string fileName;
-    std::u8string mode;
-    std::u8string startKey;
-    std::u8string endKey;
+    ScriptRunMode mode;
+    HotkeyData startKey;
+    HotkeyData endKey;
+    std::u8string displayMode;
+    std::u8string displayStartKey;
+    std::u8string displayEndKey;
 };
 
 class MainWnd {
@@ -36,9 +39,12 @@ private:
     inline static bool s_showRecordWnd = false;
     inline static bool s_showFunctionsRefWnd = false;
     inline static bool s_showKeysRefWnd = false;
+    inline static int s_indexToChangeKeyAndMode = -1;
     inline static ScriptData s_testScript{};
+    inline static ChangeKeyAndModePopUp s_changeKeyAndModePopUp{};
     static bool OpenScriptFilesDialog(HWND hwnd, std::vector<std::u8string>& outPaths);
     static bool LoadScriptEntry(const std::u8string& filePath, std::u8string& outErrorContent, std::u8string& outErrorTitle, ScriptEntry& outEntry);
+    static bool ChangeKeyAndModePopup(std::u8string filePath, const std::u8string& startKey, std::vector<std::u8string> startKeyModifiers, const std::u8string& endKey, std::vector<std::u8string> endKeyModifiers, const std::u8string& runMode);
 };
 
 #endif // !_MAIN_WND_H_

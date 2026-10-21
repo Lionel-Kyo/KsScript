@@ -162,6 +162,26 @@ bool StringEqualIgnoreCase(std::u8string_view a, std::u8string_view b) {
     return CompareStringOrdinal(wa.data(), static_cast<int>(wa.size()), wb.data(), static_cast<int>(wb.size()), TRUE) == CSTR_EQUAL;
 }
 
+std::u8string JoinU8Strings(const std::vector<std::u8string>& vec, std::u8string_view delim) {
+    if (vec.empty()) return {};
+    if (vec.size() == 1) return vec[0];
+
+    size_t total_size = delim.size() * (vec.size() - 1);
+    for (const auto& str : vec) {
+        total_size += str.size();
+    }
+
+    std::u8string result;
+    result.reserve(total_size);
+
+    result.append(vec[0]);
+    for (size_t i = 1; i < vec.size(); ++i) {
+        result.append(delim);
+        result.append(vec[i]);
+    }
+
+    return result;
+}
 
 std::istream& u8getline(std::istream& input, std::u8string& u8str, char8_t delim) {
     std::string temp;

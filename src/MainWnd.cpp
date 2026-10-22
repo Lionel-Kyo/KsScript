@@ -489,7 +489,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
 #ifdef _LANG_ZH_TW_
     if (ImGui::Button("關閉全部腳本")) {
 #else
-    if (ImGui::Button("Disable All)") {
+    if (ImGui::Button("Disable All")) {
 #endif
         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
         for (auto& s : MainHelper::GetInstance().LoadedScripts()) {
@@ -520,7 +520,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
 
     if (showChangeKeyAndMode) {
 #ifdef _LANG_ZH_TW_
-    s_changeKeyAndModePopUp.Open("更改按鍵與模式", s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
+        s_changeKeyAndModePopUp.Open("更改按鍵與模式", s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
 #else
         s_changeKeyAndModePopUp.Open("Change keys and mode", s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
 #endif

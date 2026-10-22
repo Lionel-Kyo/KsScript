@@ -91,13 +91,16 @@ void ChangeKeyAndModePopUp::RenderPopup(
             }
         }
 
+
+        const float labelWidth = 80.0f;
+        const float startX = ImGui::GetCursorPosX();
         ImGui::AlignTextToFramePadding();
 #ifdef _LANG_ZH_TW_
         ImGui::Text("開始按鍵:");
 #else
         ImGui::Text("StartKey:");
 #endif
-        ImGui::SameLine();
+        ImGui::SameLine(startX + labelWidth);
         ImGui::SetNextItemWidth(90.0f);
         if (ImGui::BeginCombo("##StartKey", reinterpret_cast<const char*>(m_orderedKeys[m_selectedStartKeyIndex].first.c_str()))) {
             for (int i = 0; i < m_orderedKeys.size(); i++) {
@@ -131,7 +134,7 @@ void ChangeKeyAndModePopUp::RenderPopup(
 #else
         ImGui::Text("EndKey:");
 #endif
-        ImGui::SameLine();
+        ImGui::SameLine(startX + labelWidth);
         ImGui::SetNextItemWidth(90.0f);
         if (ImGui::BeginCombo("##EndKey", reinterpret_cast<const char*>(m_orderedKeys[m_selectedEndKeyIndex].first.c_str()))) {
             for (int i = 0; i < m_orderedKeys.size(); i++) {
@@ -162,7 +165,7 @@ void ChangeKeyAndModePopUp::RenderPopup(
 #else
         ImGui::Text("RunMode:");
 #endif
-        ImGui::SameLine();
+        ImGui::SameLine(startX + labelWidth);
         ImGui::SetNextItemWidth(150.0f);
         if (ImGui::BeginCombo("##RunMode", reinterpret_cast<const char*>(ScriptRunModeToString(static_cast<ScriptRunMode>(m_selectedRunModeIndex)).c_str()))) {
             for (int i = 0; i < static_cast<int>(static_cast<int32_t>(ScriptRunMode::Switch) + 1); i++) {

@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include <windows.h>
 #include <d3d11.h>
 #include <tchar.h>
@@ -193,7 +193,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, hInstance, nullptr, nullptr, nullptr, nullptr, L"KsScriptAppClass", nullptr };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"KsScript", WS_OVERLAPPEDWINDOW, 100, 100, 600, 500, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"KsScript", WS_OVERLAPPEDWINDOW, 100, 100, 750, 500, nullptr, nullptr, wc.hInstance, nullptr);
     DragAcceptFiles(hwnd, TRUE);
     EnableDarkTitleBar(hwnd);
 
@@ -222,11 +222,27 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     ImGui::StyleColorsDark();
     ApplyUiTheme();
 
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesDefault());
+    I18n::Init();
+
+    if (std::filesystem::exists("C:\\Windows\\Fonts\\segoeui.ttf")) {
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesDefault());
+    } else {
+        io.Fonts->AddFontDefault();
+    }
     ImFontConfig config;
     config.MergeMode = true;
     config.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 18.0f, &config, io.Fonts->GetGlyphRangesDefault());
+    if (std::filesystem::exists("C:\\Windows\\Fonts\\msyh.ttc")) {
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 18.0f, &config, nullptr);
+    } else if (std::filesystem::exists("C:\\Windows\\Fonts\\mingliu.ttc")) {
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\mingliu.ttc", 18.0f, &config, nullptr);
+    }
+    if (std::filesystem::exists("C:\\Windows\\Fonts\\malgun.ttf")) {
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 18.0f, &config, nullptr);
+    }
+    if (std::filesystem::exists("C:\\Windows\\Fonts\\meiryo.ttc")) {
+        io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\meiryo.ttc", 18.0f, &config, nullptr);
+    }
     io.Fonts->Build();
 
     MainHelper::GetInstance().SetHWnd(hwnd);

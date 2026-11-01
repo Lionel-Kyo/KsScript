@@ -184,10 +184,12 @@
     <ClCompile Include="RecordWnd.cpp" />
     <ClCompile Include="RecordHelper.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="I18n.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChangeKeyAndModePopup.h" />
     <ClInclude Include="FunctionsRefWnd.h" />
+    <ClInclude Include="I18n.h" />
     <ClInclude Include="KeysRefWnd.h" />
     <ClInclude Include="libs\ImGui\imgui.h" />
     <ClInclude Include="libs\ImGui\imgui_impl_dx11.h" />

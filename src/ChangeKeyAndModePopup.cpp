@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ChangeKeyAndModePopup.h"
 
 ChangeKeyAndModePopUp::ChangeKeyAndModePopUp() {
@@ -95,11 +95,7 @@ void ChangeKeyAndModePopUp::RenderPopup(
         const float labelWidth = 80.0f;
         const float startX = ImGui::GetCursorPosX();
         ImGui::AlignTextToFramePadding();
-#ifdef _LANG_ZH_TW_
-        ImGui::Text("開始按鍵:");
-#else
-        ImGui::Text("StartKey:");
-#endif
+        ImGui::Text("%s", I18n::Get(StringId::StartKeyLabel));
         ImGui::SameLine(startX + labelWidth);
         ImGui::SetNextItemWidth(90.0f);
         if (ImGui::BeginCombo("##StartKey", reinterpret_cast<const char*>(m_orderedKeys[m_selectedStartKeyIndex].first.c_str()))) {
@@ -129,11 +125,7 @@ void ChangeKeyAndModePopUp::RenderPopup(
 
         ImGui::AlignTextToFramePadding();
         if (!isSwitchMode) ImGui::BeginDisabled();
-#ifdef _LANG_ZH_TW_
-        ImGui::Text("停止按鍵:");
-#else
-        ImGui::Text("EndKey:");
-#endif
+        ImGui::Text("%s", I18n::Get(StringId::EndKeyLabel));
         ImGui::SameLine(startX + labelWidth);
         ImGui::SetNextItemWidth(90.0f);
         if (ImGui::BeginCombo("##EndKey", reinterpret_cast<const char*>(m_orderedKeys[m_selectedEndKeyIndex].first.c_str()))) {
@@ -160,11 +152,7 @@ void ChangeKeyAndModePopUp::RenderPopup(
         if (!isSwitchMode) ImGui::EndDisabled();
 
         ImGui::AlignTextToFramePadding();
-#ifdef _LANG_ZH_TW_
-        ImGui::Text("運行模式:");
-#else
-        ImGui::Text("RunMode:");
-#endif
+        ImGui::Text("%s", I18n::Get(StringId::RunModeLabel));
         ImGui::SameLine(startX + labelWidth);
         ImGui::SetNextItemWidth(150.0f);
         if (ImGui::BeginCombo("##RunMode", reinterpret_cast<const char*>(ScriptRunModeToString(static_cast<ScriptRunMode>(m_selectedRunModeIndex)).c_str()))) {
@@ -184,11 +172,7 @@ void ChangeKeyAndModePopUp::RenderPopup(
         ImGui::Separator();
         ImGui::Spacing();
 
-#ifdef _LANG_ZH_TW_
-        if (ImGui::Button("保存", ImVec2(120, 0))) {
-#else
-        if (ImGui::Button("Save", ImVec2(120, 0))) {
-#endif
+        if (ImGui::Button(I18n::Get(StringId::Save), ImVec2(120, 0))) {
             auto buildKeyModifiers = [&](int ctrlIdx, int shiftIdx, int altIdx) {
                 std::vector<std::u8string> result;
                 if (ctrlIdx > 0) result.push_back(reinterpret_cast<const char8_t*>(ctrlOptions[ctrlIdx]));
@@ -214,11 +198,7 @@ void ChangeKeyAndModePopUp::RenderPopup(
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
-#ifdef _LANG_ZH_TW_
-        if (ImGui::Button("取消", ImVec2(120, 0))) {
-#else
-        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
-#endif
+        if (ImGui::Button(I18n::Get(StringId::Cancel), ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();

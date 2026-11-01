@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 #ifndef PCH_H
 #define PCH_H
 
-#define _LANG_ZH_TW_
+#include "I18n.h"
 
 #endif // !PCH_H

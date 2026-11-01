@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Utils.h"
 #include <chrono>
 #include <sstream>
@@ -573,11 +573,7 @@ namespace InputSim {
     void ShowCoordinate() {
         POINT pt;
         ::GetCursorPos(&pt); 
-#ifdef _LANG_ZH_TW_
-        ::MessageBoxW(nullptr, std::format(L"X: {}, Y: {}", pt.x, pt.y).c_str(), L"現在座標", MB_ICONINFORMATION | MB_OK);
-#else
-        ::MessageBoxW(nullptr, std::format(L"X: {}, Y: {}", pt.x, pt.y).c_str(), L"Current Coordinate", MB_ICONINFORMATION | MB_OK);
-#endif // _LANG_ZH_TW_
+        ::MessageBoxW(nullptr, std::format(L"X: {}, Y: {}", pt.x, pt.y).c_str(), I18n::GetW(StringId::MsgCurrentCoordinate).c_str(), MB_ICONINFORMATION | MB_OK);
     }
 
     bool IsExtendedKey(uint16_t vkCode) {
@@ -643,49 +639,17 @@ std::optional<MouseButtonType> MouseButtonTypeFromString(const std::u8string& st
 
 std::optional<ScriptRunMode> ScriptRunModeFromString(const std::u8string& str)
 {
-    if (str == u8"fullsingle" || str == u8"完整單次") return ScriptRunMode::FullSingle;
-    else if (str == u8"fullcontinuous" || str == u8"完整連續")  return ScriptRunMode::FullContinuous;
-    else if (str == u8"fullswitch" || str == u8"完整切換") return ScriptRunMode::FullSwitch;
-    if (str == u8"single" || str == u8"單次") return ScriptRunMode::Single;
-    else if (str == u8"continuous" || str == u8"連續")  return ScriptRunMode::Continuous;
-    else if (str == u8"switch" || str == u8"切換") return ScriptRunMode::Switch;
+    if (str == u8"fullsingle" || str == u8"完整單次" || str == u8"完整单次") return ScriptRunMode::FullSingle;
+    else if (str == u8"fullcontinuous" || str == u8"完整連續" || str == u8"完整连续")  return ScriptRunMode::FullContinuous;
+    else if (str == u8"fullswitch" || str == u8"完整切換" || str == u8"完整切换") return ScriptRunMode::FullSwitch;
+    if (str == u8"single" || str == u8"單次" || str == u8"单次") return ScriptRunMode::Single;
+    else if (str == u8"continuous" || str == u8"連續" || str == u8"连续")  return ScriptRunMode::Continuous;
+    else if (str == u8"switch" || str == u8"切換" || str == u8"切换") return ScriptRunMode::Switch;
     return std::nullopt;
 }
 
 std::u8string ScriptRunModeToString(ScriptRunMode mode) {
-#ifdef _LANG_ZH_TW_
-    switch (mode) {
-    case ScriptRunMode::FullSingle:
-        return u8"完整單次";
-    case ScriptRunMode::FullContinuous:
-        return u8"完整連續";
-    case ScriptRunMode::FullSwitch:
-        return u8"完整切換";
-    case ScriptRunMode::Single:
-        return u8"單次";
-    case ScriptRunMode::Continuous:
-        return u8"連續";
-    case ScriptRunMode::Switch:
-        return u8"切換";
-    }
-#else
-    switch (mode) {
-    case ScriptRunMode::FullSingle:
-        return u8"FullSingle";
-    case ScriptRunMode::FullContinuous:
-        return u8"FullContinuous";
-    case ScriptRunMode::FullSwitch:
-        return u8"FullSwitch";
-    case ScriptRunMode::Single:
-        return u8"Single";
-    case ScriptRunMode::Continuous:
-        return u8"Continuous";
-    case ScriptRunMode::Switch:
-        return u8"Switch";
-    }
-#endif // _LANG_ZH_TW_
-
-    return u8"";
+    return std::u8string(reinterpret_cast<const char8_t*>(I18n::GetRunModeString(static_cast<int>(mode))));
 }
 
 /// <summary>
@@ -831,20 +795,12 @@ bool ParseScriptLine(const std::u8string& line, ParsedCommand& outCmd, std::u8st
     size_t openParen = line.find('(');
     size_t closeParen = line.rfind(')');
     if (openParen == std::u8string::npos || closeParen == std::u8string::npos || closeParen < openParen) {
-#ifdef _LANG_ZH_TW_
-        outError = u8"缺少或無效的括號 '()'";
-#else
-        outError = u8"Missing or invalid parentheses '()'";
-#endif
+        outError = I18n::GetU8(StringId::ErrMissingParentheses);
         return false;
     }
 
     if (line.size() - 1 != closeParen) {
-#ifdef _LANG_ZH_TW_
-        outError = u8"括號 ')' 後面不應該有其他文字，如有需要可以將文字加在 # 之後;";
-#else
-        outError = u8"Trailing characters found after closing parenthesis ')', If needed, you can add text after #.";
-#endif
+        outError = I18n::GetU8(StringId::ErrTrailingAfterParen);
         return false;
     }
 
@@ -852,63 +808,47 @@ bool ParseScriptLine(const std::u8string& line, ParsedCommand& outCmd, std::u8st
     std::u8string args = std::u8string(StringTrim(std::u8string_view(line).substr(openParen + 1, closeParen - openParen - 1)));
 
     try {
-        if (func == u8"setstartkey" || func == u8"setendkey" || func == u8"設定開始按鍵" || func == u8"設定停止按鍵") {
-            outCmd.type = (func == u8"setstartkey" || func == u8"設定開始按鍵") ? CmdType::SetStartKey : CmdType::SetEndKey;
+        if (func == u8"setstartkey" || func == u8"setendkey" || func == u8"設定開始按鍵" || func == u8"設定停止按鍵" || func == u8"设定开始按键" || func == u8"设定停止按键") {
+            outCmd.type = (func == u8"setstartkey" || func == u8"設定開始按鍵" || func == u8"设定开始按键") ? CmdType::SetStartKey : CmdType::SetEndKey;
             HotkeyData hotkey;
             if (!ParseHotkeyData(StringLower(args), hotkey)) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的按鍵格式: " + args;
-#else
-                outError = u8"Invalid hotkey format: " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidHotkey) + args;
                 return false;
             }
             outCmd.args = hotkey;
             return true;
         }
-        else if (func == u8"setrunmode" || func == u8"設定運行模式") {
+        else if (func == u8"setrunmode" || func == u8"設定運行模式" || func == u8"设定运行模式") {
             auto runMode = ScriptRunModeFromString(StringLower(args));
             if (!runMode.has_value()) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的運行模式引數: " + args;
-#else
-                outError = u8"Invalid run mode parameter: " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidRunMode) + args;
                 return false;
             }
             outCmd.type = CmdType::SetScriptRunMode;
             outCmd.args = runMode.value();
             return true;
         }
-        else if (func == u8"delay" || func == u8"延遲") {
+        else if (func == u8"delay" || func == u8"延遲" || func == u8"延迟") {
             outCmd.type = CmdType::Delay;
             int64_t num;
             if (!StringToInt<int64_t>(std::string(args.begin(), args.end()), num)) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的延遲引數 (必須為整數): " + args;
-#else
-                outError = u8"Invalid delay parameter (must be an integer): " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidDelay) + args;
                 return false;
             }
             outCmd.args = num;
             return true;
         }
-        else if (func == u8"mousedown" || func == u8"mouseup" || func == u8"滑鼠按下" || func == u8"滑鼠放開") {
+        else if (func == u8"mousedown" || func == u8"mouseup" || func == u8"滑鼠按下" || func == u8"滑鼠放開" || func == u8"鼠标按下" || func == u8"鼠标放开") {
             auto type = MouseButtonTypeFromString(StringLower(args));
             if (!type.has_value()) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的滑鼠按鍵引數: " + args;
-#else
-                outError = u8"Invalid mouse button parameter: " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidMouseButton) + args;
                 return false;
             }
-            outCmd.type = (func == u8"mousedown" || func == u8"滑鼠按下") ? CmdType::MouseDown : CmdType::MouseUp;
+            outCmd.type = (func == u8"mousedown" || func == u8"滑鼠按下" || func == u8"鼠标按下") ? CmdType::MouseDown : CmdType::MouseUp;
             outCmd.args = type.value();
             return true;
         }
-        else if (func == u8"absolutemove" || func == u8"relativemove" || func == u8"絕對移動" || func == u8"相對移動") {
+        else if (func == u8"absolutemove" || func == u8"relativemove" || func == u8"絕對移動" || func == u8"相對移動" || func == u8"绝对移动" || func == u8"相对移动") {
             auto splitView = args | std::views::split(u8',');
 
             std::vector<int32_t> splitArgs;
@@ -918,93 +858,65 @@ bool ParseScriptLine(const std::u8string& line, ParsedCommand& outCmd, std::u8st
                 std::u8string s(part.begin(), part.end());
                 s = StringTrim(s);
                 if (!StringToInt<int32_t>(std::string(s.begin(), s.end()), num)) {
-#ifdef _LANG_ZH_TW_
-                    outError = u8"無效的座標引數 (必須為整數): " + args;
-#else
-                    outError = u8"Invalid coordinate parameter (must be integers): " + args;
-#endif
+                    outError = I18n::GetU8(StringId::ErrInvalidCoordinate) + args;
                     return false;
                 }
                 splitArgs.push_back(num);
             }
 
             if (splitArgs.size() != 2) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"移動指令只需要2個引數 (x, y): " + args;
-#else
-                outError = u8"Move command expects exactly 2 parameters (x, y): " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrMoveArgCount) + args;
                 return false;
             }
 
-            outCmd.type = (func == u8"absolutemove" || func == u8"絕對移動") ? CmdType::MouseAbsoluteMove : CmdType::MouseRelativeMove;
+            outCmd.type = (func == u8"absolutemove" || func == u8"絕對移動" || func == u8"绝对移动") ? CmdType::MouseAbsoluteMove : CmdType::MouseRelativeMove;
             outCmd.args = std::move(splitArgs);
             return true;
         }
-        else if (func == u8"keyboarddown" || func == u8"keyboardup" || func == u8"鍵盤按下" || func == u8"鍵盤放開") {
+        else if (func == u8"keyboarddown" || func == u8"keyboardup" || func == u8"鍵盤按下" || func == u8"鍵盤放開" || func == u8"键盘按下" || func == u8"键盘放开") {
             auto key = GetKeyByName(args);
-            outCmd.type = (func == u8"keyboarddown" || func == u8"鍵盤按下") ? CmdType::KeyboardDown : CmdType::KeyboardUp;
+            outCmd.type = (func == u8"keyboarddown" || func == u8"鍵盤按下" || func == u8"键盘按下") ? CmdType::KeyboardDown : CmdType::KeyboardUp;
             if (key.has_value() && key > 0 && key < 65536) {
                 outCmd.args = (uint16_t)key.value();
                 return true;
             }
             uint16_t num = 0;
             if (!StringToInt<uint16_t>(std::string(args.begin(), args.end()), num)) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的按鍵名稱或按鍵編號: " + args;
-#else
-                outError = u8"Invalid key parameter or virtual key code: " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidKeyParam) + args;
                 return false;
             }
             outCmd.args = (uint16_t)num;
             return true;
         }
-        else if (func == u8"wheeldown" || func == u8"wheelup" || func == u8"滾輪下" || func == u8"滾輪上") {
+        else if (func == u8"wheeldown" || func == u8"wheelup" || func == u8"滾輪下" || func == u8"滾輪上" || func == u8"滚轮下" || func == u8"滚轮上") {
             if (!args.empty()) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"滾輪指令不接收引數: " + args;
-#else
-                outError = u8"Wheel command does not accept parameters: " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrWheelNoParam) + args;
                 return false;
             }
-            outCmd.type = (func == u8"wheeldown" || func == u8"滾輪下") ? CmdType::WheelDown : CmdType::WheelUp;
+            outCmd.type = (func == u8"wheeldown" || func == u8"滾輪下" || func == u8"滚轮下") ? CmdType::WheelDown : CmdType::WheelUp;
             return true;
         }
-        else if (func == u8"holdtitlebar" || func == u8"releasetitlebar" || func == u8"按住視窗標題" || func == u8"放開視窗標題") {
+        else if (func == u8"holdtitlebar" || func == u8"releasetitlebar" || func == u8"按住視窗標題" || func == u8"放開視窗標題" || func == u8"按住窗口标题" || func == u8"放开窗口标题") {
             std::u8string text;
             if (!ParseStringArg(args, text)) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的文字格式（文字應該被\"\"或''包圍）: " + args;
-#else
-                outError = u8"Invalid string format (expected quoted string): " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidStringQuotes) + args;
                 return false;
             }
-            outCmd.type = (func == u8"holdtitlebar" || func == u8"按住視窗標題") ? CmdType::HoldTitleBar : CmdType::ReleaseTitleBar;
+            outCmd.type = (func == u8"holdtitlebar" || func == u8"按住視窗標題" || func == u8"按住窗口标题") ? CmdType::HoldTitleBar : CmdType::ReleaseTitleBar;
             outCmd.args = u8stringToWString(text);
             return true;
         }
-        else if (func == u8"outputtext" || func == u8"輸出文字") {
+        else if (func == u8"outputtext" || func == u8"輸出文字" || func == u8"输出文本") {
             size_t startQuote = args.find_first_of(u8"\"'");
             if (startQuote == std::u8string::npos) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的文字格式（文字應該被\"\"或''包圍）: " + args;
-#else
-                outError = u8"Invalid string format (expected quoted string): " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidStringQuotes) + args;
                 return false;
             }
 
             wchar_t quote = args[startQuote];
             size_t endQuote = args.find_last_of(quote);
             if (endQuote == std::u8string::npos) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的文字格式(未閉合的引號): " + args;
-#else
-                outError = u8"Invalid string format (unclosed quote): " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrUnclosedQuote) + args;
                 return false;
             }
 
@@ -1013,11 +925,7 @@ bool ParseScriptLine(const std::u8string& line, ParsedCommand& outCmd, std::u8st
 
             std::u8string text;
             if (!ParseStringArg(stringPart, text)) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"無效的文字格式（文字應該被\"\"或''包圍）: " + args;
-#else
-                outError = u8"Invalid string format (expected quoted string): " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrInvalidStringQuotes) + args;
                 return false;
             }
 
@@ -1026,20 +934,12 @@ bool ParseScriptLine(const std::u8string& line, ParsedCommand& outCmd, std::u8st
                 if (remaining.front() == L',') {
                     std::u8string delayStr = std::u8string(StringTrim(remaining.substr(1)));
                     if (!StringToInt<int64_t>(std::string(delayStr.begin(), delayStr.end()), delayMs)) {
-#ifdef _LANG_ZH_TW_
-                        outError = u8"無效的延遲引數 (必須為整數): " + args;
-#else
-                        outError = u8"Invalid delay parameter (must be an integer): " + args;
-#endif
+                        outError = I18n::GetU8(StringId::ErrInvalidDelay) + args;
                         return false;
                     }
                 }
                 else {
-#ifdef _LANG_ZH_TW_
-                    outError = u8"無效的引數格式: " + args;
-#else
-                    outError = u8"Invalid parameter format: " + args;
-#endif
+                    outError = I18n::GetU8(StringId::ErrInvalidParamFormat) + args;
                     return false;
                 }
             }
@@ -1048,13 +948,9 @@ bool ParseScriptLine(const std::u8string& line, ParsedCommand& outCmd, std::u8st
             outCmd.args = OutputTextData{ u8stringToWString(text), delayMs };
             return true;
             }
-        else if (func == u8"showcoordinate" || func == u8"顯示座標") {
+        else if (func == u8"showcoordinate" || func == u8"顯示座標" || func == u8"显示坐标") {
             if (!args.empty()) {
-#ifdef _LANG_ZH_TW_
-                outError = u8"顯示座標指令不接收引數: " + args;
-#else
-                outError = u8"ShowCoordinate command does not accept parameters: " + args;
-#endif
+                outError = I18n::GetU8(StringId::ErrShowCoordNoParam) + args;
                 return false;
             }
             outCmd.type = CmdType::ShowCoordinate;
@@ -1062,19 +958,11 @@ bool ParseScriptLine(const std::u8string& line, ParsedCommand& outCmd, std::u8st
         }
     }
     catch (...) {
-#ifdef _LANG_ZH_TW_
-        outError = u8"解析該行時發生未知的例外狀況。";
-#else
-        outError = u8"An unexpected exception occurred during line parsing.";
-#endif
+        outError = I18n::GetU8(StringId::ErrParseException);
         return false;
     }
 
-#ifdef _LANG_ZH_TW_
-    outError = u8"未知的指令: " + func;
-#else
-    outError = u8"Unknown function: " + func;
-#endif
+    outError = I18n::GetU8(StringId::ErrUnknownFunction) + func;
     return false;
 }
 
@@ -1111,44 +999,28 @@ bool ValidateAndParseScript(
         std::u8string outError;
         if (!ParseScriptLine(line, cmd, outError)) {
             outErrorLine = lineNumber;
-#ifdef _LANG_ZH_TW_
-            outErrorMsg = wstringToU8String(std::format(L"腳本錯誤\r\n{}\r\n行數: {}:\r\n\"{}\"", u8stringToWString(outError), lineNumber, u8stringToWString(rawLine)));
-#else
-            outErrorMsg = wstringToU8String(std::format(L"Syntax Error\r\n{}\r\nLine {}:\r\n\"{}\"", u8stringToWString(outError), lineNumber, u8stringToWString(rawLine)));
-#endif // _LANG_ZH_TW_
+            outErrorMsg = I18n::FormatU8(StringId::ErrSyntaxErrorPrefix, outError, lineNumber, rawLine);
             return false;
         }
 
         if (cmd.type == CmdType::SetStartKey) {
             if (startKey.key != 0) {
                 outErrorLine = lineNumber;
-#ifdef _LANG_ZH_TW_
-                outErrorMsg = wstringToU8String(std::format(L"腳本錯誤\r\n已經設定了開始按鍵\r\n行數: {}:\r\n\"{}\"\r\n", lineNumber, u8stringToWString(rawLine)));
-#else
-                outErrorMsg = wstringToU8String(std::format(L"Syntax Error\r\nStart Key already defined\r\nLine {}:\r\n\"{}\"", lineNumber, u8stringToWString(rawLine)));
-#endif // _LANG_ZH_TW_
+                outErrorMsg = I18n::FormatU8(StringId::ErrStartKeyAlreadyDefined, lineNumber, rawLine);
                 return false;
             }
             startKey = std::any_cast<HotkeyData>(cmd.args);
         } else if (cmd.type == CmdType::SetEndKey) {
             if (endKey.key != 0) {
                 outErrorLine = lineNumber;
-#ifdef _LANG_ZH_TW_
-                outErrorMsg = wstringToU8String(std::format(L"腳本錯誤，行數: {}:\r\n\"{}\"\r\n已經設定了停止按鍵", lineNumber, u8stringToWString(rawLine)));
-#else
-                outErrorMsg = wstringToU8String(std::format(L"Syntax Error\r\nEnd Key already defined\r\nLine {}:\r\n\"{}\"", lineNumber, u8stringToWString(rawLine)));
-#endif // _LANG_ZH_TW_
+                outErrorMsg = I18n::FormatU8(StringId::ErrEndKeyAlreadyDefined, lineNumber, rawLine);
                 return false;
             }
             endKey = std::any_cast<HotkeyData>(cmd.args);
         } else if (cmd.type == CmdType::SetScriptRunMode) {
             if (scriptRunMode.has_value()) {
                 outErrorLine = lineNumber;
-#ifdef _LANG_ZH_TW_
-                outErrorMsg = wstringToU8String(std::format(L"腳本錯誤，行數: {}:\r\n\"{}\"\r\n已經設定了運行模式", lineNumber, u8stringToWString(rawLine)));
-#else
-                outErrorMsg = wstringToU8String(std::format(L"Syntax Error\r\nRun Mode already defined\r\nLine {}:\r\n\"{}\"", lineNumber, u8stringToWString(rawLine)));
-#endif // _LANG_ZH_TW_
+                outErrorMsg = I18n::FormatU8(StringId::ErrRunModeAlreadyDefined, lineNumber, rawLine);
                 return false;
             }
             scriptRunMode = std::any_cast<ScriptRunMode>(cmd.args);

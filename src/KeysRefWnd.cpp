@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "KeysRefWnd.h"
 
 void KeysRefWnd::RenderWindow(HWND hwnd, bool* pOpen) {
@@ -10,17 +10,10 @@ void KeysRefWnd::RenderWindow(HWND hwnd, bool* pOpen) {
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
 
-#ifdef _LANG_ZH_TW_
-    if (!ImGui::Begin("鍵盤按鍵說明", pOpen)) {
+    if (!ImGui::Begin(I18n::Get(StringId::KeysRef), pOpen)) {
         ImGui::End();
         return;
     }
-#else
-    if (!ImGui::Begin("Keys Reference", pOpen)) {
-        ImGui::End();
-        return;
-    }
-#endif
 
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
         ImGui::IsKeyPressed(ImGuiKey_Escape)) {
@@ -43,24 +36,17 @@ void KeysRefWnd::RenderWindow(HWND hwnd, bool* pOpen) {
         s_selectedRows.resize(s_orderedKeys.size(), false);
     }
 
-    // Ctrl
+    // Ctrl+A
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A)) {
         std::fill(s_selectedRows.begin(), s_selectedRows.end(), true);
     }
 
     ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
 
-#ifdef _LANG_ZH_TW_
     if (ImGui::BeginTable("KeysRefTable", 2, flags, ImGui::GetContentRegionAvail())) {
-        ImGui::TableSetupColumn("名稱", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("數值", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        ImGui::TableSetupColumn(I18n::Get(StringId::ColName), ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn(I18n::Get(StringId::ColValue), ImGuiTableColumnFlags_WidthFixed, 100.0f);
         ImGui::TableHeadersRow();
-#else
-    if (ImGui::BeginTable("KeysRefTable", 2, flags, ImGui::GetContentRegionAvail())) {
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        ImGui::TableHeadersRow();
-#endif
 
         for (size_t i = 0; i < s_orderedKeys.size(); ++i) {
             const auto& [key, value] = s_orderedKeys[i];

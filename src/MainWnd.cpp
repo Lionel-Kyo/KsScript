@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "MainWnd.h"
 
 bool MainWnd::OpenScriptFilesDialog(HWND hwnd, std::vector<std::u8string>& outPaths) {
@@ -51,13 +51,8 @@ bool MainWnd::LoadScriptEntry(const std::u8string& filePath, std::u8string& outE
 
     std::vector<std::u8string> fileLines;
     if (!ReadUtf8FileLines(entry.filePath, fileLines)) {
-#ifdef _LANG_ZH_TW_
-        outErrorContent = wstringToU8String(std::format(L"讀取UTF-8 .txt腳本文件失敗\r\n{}", u8stringToWString(entry.filePath)));
-        outErrorTitle = u8"文件錯誤";
-#else
-        outErrorContent = wstringToU8String(std::format(L"Failed to read UTF-8 script file.\r\n{}", u8stringToWString(entry.filePath)));
-        outErrorTitle = u8"File Error";
-#endif // _LANG_ZH_TW_
+        outErrorContent = I18n::FormatU8(StringId::MsgReadScriptFailed, entry.filePath);
+        outErrorTitle = I18n::GetU8(StringId::TitleFileError);
         return false;
     }
     entry.lines = fileLines;
@@ -70,11 +65,7 @@ bool MainWnd::LoadScriptEntry(const std::u8string& filePath, std::u8string& outE
     int errorLine = 0;
     if (!ValidateAndParseScript(fileLines, startKey, endKey, runMode, parsedCommands, errorMsg, errorLine)) {
         outErrorContent = errorMsg + u8"\r\n" + entry.filePath;
-#ifdef _LANG_ZH_TW_
-        outErrorTitle = u8"腳本錯誤";
-#else
-        outErrorTitle = u8"Script Syntax Error";
-#endif // _LANG_ZH_TW_
+        outErrorTitle = I18n::GetU8(StringId::TitleScriptError);
         return false;
     }
     switch (runMode) {
@@ -106,11 +97,7 @@ bool MainWnd::ChangeKeyAndModePopup(
 ) {
     std::vector<std::u8string> fileLines;
     if (!ReadUtf8FileLines(filePath, fileLines)) {
-#ifdef _LANG_ZH_TW_
-        MsgBox().Show(u8"無法讀取檔案以進行修改", u8"保存失敗");
-#else
-        MsgBox().Show(u8"Failed to read file for modification", u8"Save Failed");
-#endif
+        MsgBox().Show(I18n::GetU8(StringId::MsgReadFileFailed), I18n::GetU8(StringId::TitleSaveFailed));
         return false;
     }
 
@@ -124,9 +111,9 @@ bool MainWnd::ChangeKeyAndModePopup(
             size_t closeParen = trimmedLine.rfind(u8')');
             if (openParen != std::u8string::npos && closeParen != std::u8string::npos && closeParen > openParen) {
                 std::u8string func = std::u8string(StringTrim(StringLower(std::u8string_view(trimmedLine).substr(0, openParen))));
-                if (func == u8"設定開始按鍵" || func == u8"setstartkey" ||
-                    func == u8"設定停止按鍵" || func == u8"setendkey" ||
-                    func == u8"設定運行模式" || func == u8"setrunmode") {
+                if (func == u8"設定開始按鍵" || func == u8"setstartkey" || func == u8"设定开始按键" ||
+                    func == u8"設定停止按鍵" || func == u8"setendkey" || func == u8"设定停止按键" ||
+                    func == u8"設定運行模式" || func == u8"setrunmode" || func == u8"设定运行模式") {
                     isHeader = true;
                 }
             }
@@ -153,21 +140,25 @@ bool MainWnd::ChangeKeyAndModePopup(
     combinedEndKeys.push_back(endKey);
     combinedEndKeys.insert(combinedEndKeys.end(), endKeyModifiers.begin(), endKeyModifiers.end());
 
-#ifdef _LANG_ZH_TW_
+    std::u8string hSetStartKey = u8"SetStartKey";
+    std::u8string hSetEndKey = u8"SetEndKey";
+    std::u8string hSetRunMode = u8"SetRunMode";
+    if (I18n::GetLanguage() == Language::TraditionalChinese || I18n::GetLanguage() == Language::Cantonese) {
+        hSetStartKey = u8"設定開始按鍵";
+        hSetEndKey = u8"設定停止按鍵";
+        hSetRunMode = u8"設定運行模式";
+    } else if (I18n::GetLanguage() == Language::SimplifiedChinese) {
+        hSetStartKey = u8"设定开始按键";
+        hSetEndKey = u8"设定停止按键";
+        hSetRunMode = u8"设定运行模式";
+    }
+
     std::vector<std::u8string> headers = {
-        u8"設定開始按鍵(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
-        u8"設定停止按鍵(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
-        u8"設定運行模式(" + runMode + u8")",
+        hSetStartKey + u8"(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
+        hSetEndKey + u8"(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
+        hSetRunMode + u8"(" + runMode + u8")",
         u8"",
     };
-#else
-    std::vector<std::u8string> headers = {
-        u8"SetStartKey(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
-        u8"SetEndKey(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
-        u8"SetRunMode(" + runMode + u8")",
-        u8"",
-    };
-#endif
 
     // Prepend headers to filtered lines
     filteredLines.insert(filteredLines.begin(), headers.begin(), headers.end());
@@ -175,11 +166,7 @@ bool MainWnd::ChangeKeyAndModePopup(
     // Write back to file
     std::ofstream file(std::filesystem::path(u8stringToWString(filePath)), std::ios::binary);
     if (!file.is_open()) {
-#ifdef _LANG_ZH_TW_
-        MsgBox().Show(u8"無法開啟檔案以進行寫入", u8"保存失敗");
-#else
-        MsgBox().Show(u8"Failed to open file for writing", u8"Save File Failed");
-#endif
+        MsgBox().Show(I18n::GetU8(StringId::MsgOpenFileWriteFailed), I18n::GetU8(StringId::TitleSaveFailed));
         return false;
     }
 
@@ -195,11 +182,7 @@ bool MainWnd::ChangeKeyAndModePopup(
     }
     catch (...) {
         file.close();
-#ifdef _LANG_ZH_TW_
-        MsgBox().Show(u8"寫入檔案時發生未預期的錯誤", u8"保存失敗");
-#else
-        MsgBox().Show(u8"An unexpected error occurred while writing to file", u8"Save File Failed");
-#endif
+        MsgBox().Show(I18n::GetU8(StringId::MsgWriteFileUnexpected), I18n::GetU8(StringId::TitleSaveFailed));
         return false;
     }
     file.close();
@@ -231,18 +214,9 @@ void MainWnd::RenderWindow(HWND hwnd) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.0f, 16.0f));
 
 
-#ifdef _LANG_ZH_TW_
-    ImGui::Begin("腳本管理器", nullptr, window_flags);
-#else
-    ImGui::Begin("Script Manager", nullptr, window_flags);
-#endif
+    ImGui::Begin(I18n::Get(StringId::MainWndTitle), nullptr, window_flags);
 
-
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button("讀取腳本")) {
-#else
-    if (ImGui::Button("Open Scripts")) {
-#endif
+    if (ImGui::Button(I18n::Get(StringId::OpenScripts))) {
         std::vector<std::u8string> filePaths;
         if (OpenScriptFilesDialog(hwnd, filePaths)) {
             ProcessScriptFiles(filePaths);
@@ -250,22 +224,13 @@ void MainWnd::RenderWindow(HWND hwnd) {
     }
 
     ImGui::SameLine();
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button("腳本記錄器")) s_showRecordWnd = true;
+    if (ImGui::Button(I18n::Get(StringId::ScriptRecorder))) s_showRecordWnd = true;
     ImGui::SameLine();
-    if (ImGui::Button("腳本指令說明")) s_showFunctionsRefWnd = true;
+    if (ImGui::Button(I18n::Get(StringId::FunctionsRef))) s_showFunctionsRefWnd = true;
     ImGui::SameLine();
-    if (ImGui::Button("鍵盤按鍵說明")) s_showKeysRefWnd = true;
-#else
-    if (ImGui::Button("Script Recorder")) s_showRecordWnd = true;
-    ImGui::SameLine();
-    if (ImGui::Button("Functions Reference")) s_showFunctionsRefWnd = true;
-    ImGui::SameLine();
-    if (ImGui::Button("Keys Reference")) s_showKeysRefWnd = true;
-#endif
+    if (ImGui::Button(I18n::Get(StringId::KeysRef))) s_showKeysRefWnd = true;
 
     ImGui::Separator();
-
 
     ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
         ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY; // |
@@ -273,19 +238,11 @@ void MainWnd::RenderWindow(HWND hwnd) {
 
     bool showChangeKeyAndMode = false;
     if (ImGui::BeginTable("ScriptTable", 5, tableFlags, ImVec2(0, -ImGui::GetFrameHeightWithSpacing()))) {
-#ifdef _LANG_ZH_TW_
-        ImGui::TableSetupColumn("開啟", ImGuiTableColumnFlags_WidthFixed, 60.0f);
-        ImGui::TableSetupColumn("腳本名稱", ImGuiTableColumnFlags_WidthStretch, 2.0f);
-        ImGui::TableSetupColumn("運行模式", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-        ImGui::TableSetupColumn("開始按鍵", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-        ImGui::TableSetupColumn("停止按鍵", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-#else
-        ImGui::TableSetupColumn("Enable", ImGuiTableColumnFlags_WidthFixed, 60.0f);
-        ImGui::TableSetupColumn("Script Name", ImGuiTableColumnFlags_WidthStretch, 2.0f);
-        ImGui::TableSetupColumn("Execution Mode", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-        ImGui::TableSetupColumn("Start Key", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-        ImGui::TableSetupColumn("End Key", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-#endif
+        ImGui::TableSetupColumn(I18n::Get(StringId::ColEnable), ImGuiTableColumnFlags_WidthFixed, 60.0f);
+        ImGui::TableSetupColumn(I18n::Get(StringId::ColScriptName), ImGuiTableColumnFlags_WidthStretch, 2.0f);
+        ImGui::TableSetupColumn(I18n::Get(StringId::ColExecutionMode), ImGuiTableColumnFlags_WidthFixed, 120.0f);
+        ImGui::TableSetupColumn(I18n::Get(StringId::ColStartKey), ImGuiTableColumnFlags_WidthFixed, 120.0f);
+        ImGui::TableSetupColumn(I18n::Get(StringId::ColEndKey), ImGuiTableColumnFlags_WidthFixed, 120.0f);
         ImGui::TableHeadersRow();
 
         int indexToRemove = -1;
@@ -337,11 +294,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
             if (ImGui::BeginPopupContextItem("ScriptRowContext")) {
                 selectedRow = static_cast<int>(i); // Select row on right-click
                 if (row.isEnabled) {
-#ifdef _LANG_ZH_TW_
-                    if (ImGui::MenuItem("關閉腳本")) {
-#else
-                    if (ImGui::MenuItem("Disable")) {
-#endif
+                    if (ImGui::MenuItem(I18n::Get(StringId::MenuDisable))) {
                         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
                         auto& entry = MainHelper::GetInstance().LoadedScripts().at(i);
                         entry.data.isEnabled = false;
@@ -349,11 +302,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
                         StopScriptExecution(entry.data, true, false); 
                     }
                 } else {
-#ifdef _LANG_ZH_TW_
-                    if (ImGui::MenuItem("開啟腳本")) {
-#else
-                    if (ImGui::MenuItem("Enable")) {
-#endif
+                    if (ImGui::MenuItem(I18n::Get(StringId::MenuEnable))) {
                         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
                         auto& entry = MainHelper::GetInstance().LoadedScripts().at(i);
                         entry.data.isEnabled = true;
@@ -362,20 +311,12 @@ void MainWnd::RenderWindow(HWND hwnd) {
                 }
                 ImGui::Separator();
                 if (s_testScript.isRunning) {
-#ifdef _LANG_ZH_TW_
-                    if (ImGui::MenuItem("停止測試執行")) {
-#else
-                    if (ImGui::MenuItem("Stop Test Run")) {
-#endif
+                    if (ImGui::MenuItem(I18n::Get(StringId::MenuStopTestRun))) {
                         StopScriptExecution(s_testScript, true, false);
                     }
                 }
                 else {
-#ifdef _LANG_ZH_TW_
-                    if (ImGui::MenuItem("測試執行")) {
-#else
-                    if (ImGui::MenuItem("Run Test")) {
-#endif
+                    if (ImGui::MenuItem(I18n::Get(StringId::MenuRunTest))) {
                         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
                         auto& entry = MainHelper::GetInstance().LoadedScripts().at(i);
                         s_testScript.commands = entry.data.commands;
@@ -385,33 +326,17 @@ void MainWnd::RenderWindow(HWND hwnd) {
                     }
                 }
                 ImGui::Separator();
-#ifdef _LANG_ZH_TW_
-                if (ImGui::MenuItem("移除腳本")) {
-#else
-                if (ImGui::MenuItem("Remove")) {
-#endif
+                if (ImGui::MenuItem(I18n::Get(StringId::MenuRemove))) {
                     indexToRemove = static_cast<int>(i); 
                 }
-#ifdef _LANG_ZH_TW_
-                if (ImGui::MenuItem("重新讀取")) {
-#else
-                if (ImGui::MenuItem("Reload")) {
-#endif
+                if (ImGui::MenuItem(I18n::Get(StringId::MenuReload))) {
                     indexToReload = static_cast<int>(i); 
                 }
                 ImGui::Separator();
-#ifdef _LANG_ZH_TW_
-                if (ImGui::MenuItem("打開腳本位置")) {
-#else
-                if (ImGui::MenuItem("Open Script Location")) {
-#endif
+                if (ImGui::MenuItem(I18n::Get(StringId::MenuOpenScriptLocation))) {
                     indexToOpenScriptLocation = static_cast<int>(i);
                 }
-#ifdef _LANG_ZH_TW_
-                if (ImGui::MenuItem("更改按鍵與模式")) {
-#else
-                if (ImGui::MenuItem("Change keys and mode")) {
-#endif
+                if (ImGui::MenuItem(I18n::Get(StringId::MenuChangeKeysAndMode))) {
                     s_indexToChangeKeyAndMode = static_cast<int>(i);
                     showChangeKeyAndMode = true;
                 }
@@ -472,11 +397,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
         ImGui::EndTable();
     }
 
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button("開啟全部腳本")) {
-#else
-    if (ImGui::Button("Enable All")) {
-#endif
+    if (ImGui::Button(I18n::Get(StringId::EnableAll))) {
         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
         for (auto& s : MainHelper::GetInstance().LoadedScripts()) {
             s.data.isEnabled = true;
@@ -486,11 +407,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
         }
     }
     ImGui::SameLine();
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button("關閉全部腳本")) {
-#else
-    if (ImGui::Button("Disable All")) {
-#endif
+    if (ImGui::Button(I18n::Get(StringId::DisableAll))) {
         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
         for (auto& s : MainHelper::GetInstance().LoadedScripts()) {
             s.data.isEnabled = false;
@@ -501,11 +418,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
         }
     }
     ImGui::SameLine();
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button("移除全部腳本")) {
-#else
-    if (ImGui::Button("Remove All")) {
-#endif
+    if (ImGui::Button(I18n::Get(StringId::RemoveAll))) {
         std::lock_guard<std::mutex> lock(MainHelper::GetInstance().LoadedScriptsMutex());
         auto& scripts = MainHelper::GetInstance().LoadedScripts();
         for (auto& s : scripts) {
@@ -515,15 +428,27 @@ void MainWnd::RenderWindow(HWND hwnd) {
         s_tableRows.clear();
     }
 
+    ImGui::SameLine();
+    float langComboWidth = 135.0f;
+    float availWidth = ImGui::GetContentRegionAvail().x;
+    if (availWidth > langComboWidth) {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availWidth - langComboWidth);
+    }
+    ImGui::SetNextItemWidth(langComboWidth);
+    int currentLang = static_cast<int>(I18n::GetLanguage());
+    if (ImGui::Combo("##LanguageSelect", &currentLang, I18n::GetLanguageNames(), static_cast<int>(Language::Count))) {
+        I18n::SetLanguage(static_cast<Language>(currentLang));
+        for (auto& row : s_tableRows) {
+            row.displayMode = ScriptRunModeToString(row.mode);
+        }
+        I18n::SaveConfig();
+    }
+
     ImGui::PopStyleVar(3);
     ImGui::End();
 
     if (showChangeKeyAndMode) {
-#ifdef _LANG_ZH_TW_
-        s_changeKeyAndModePopUp.Open("更改按鍵與模式", s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
-#else
-        s_changeKeyAndModePopUp.Open("Change keys and mode", s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
-#endif
+        s_changeKeyAndModePopUp.Open(I18n::Get(StringId::MenuChangeKeysAndMode), s_tableRows[s_indexToChangeKeyAndMode].mode, s_tableRows[s_indexToChangeKeyAndMode].startKey, s_tableRows[s_indexToChangeKeyAndMode].endKey);
     }
 
     if (s_indexToChangeKeyAndMode != -1) {
@@ -554,11 +479,7 @@ void MainWnd::RenderWindow(HWND hwnd) {
                         s_tableRows[s_indexToChangeKeyAndMode].displayStartKey = HotkeyDataToString(newEntry.data.startKey);
                         s_tableRows[s_indexToChangeKeyAndMode].displayEndKey = HotkeyDataToString(newEntry.data.endKey);
                         scripts[s_indexToChangeKeyAndMode] = std::move(newEntry);
-#ifdef _LANG_ZH_TW_
-                        MsgBox().Show(std::format(L"腳本設定已更新: {}", u8stringToWString(filePath)), L"保存成功");
-#else
-                        MsgBox().Show(std::format(L"Script settings updated: {}", u8stringToWString(filePath)), L"Save Success");
-#endif
+                        MsgBox().Show(I18n::FormatW(StringId::MsgScriptSettingsUpdated, u8stringToWString(filePath)), I18n::GetW(StringId::TitleSaveSuccess));
                     }
                 }
                 s_indexToChangeKeyAndMode = -1;

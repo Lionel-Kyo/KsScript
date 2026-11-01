@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "RecordHelper.h"
 
 RecordHelper& RecordHelper::GetInstance() {
@@ -13,11 +13,13 @@ void RecordHelper::RecordCmd(const std::u8string& cmd) {
 
     std::lock_guard lock(m_scriptMutex);
     if (elapsed > 10) {
-#ifdef _LANG_ZH_TW_
-        m_scriptBuffer.push_back(u8"延遲" + ToU8StringUnchecked(std::format("({})", elapsed)));
-#else
-        m_scriptBuffer.push_back(u8"Delay" + ToU8StringUnchecked(std::format("({})", elapsed)));
-#endif // _LANG_ZH_TW
+        std::u8string delayName = u8"Delay";
+        if (I18n::GetLanguage() == Language::TraditionalChinese || I18n::GetLanguage() == Language::Cantonese) {
+            delayName = u8"延遲";
+        } else if (I18n::GetLanguage() == Language::SimplifiedChinese) {
+            delayName = u8"延迟";
+        }
+        m_scriptBuffer.push_back(delayName + ToU8StringUnchecked(std::format("({})", elapsed)));
     }
     m_scriptBuffer.push_back(cmd);
 }
@@ -30,17 +32,21 @@ LRESULT CALLBACK RecordHelper::LowLevelKeyboardProc(int nCode, WPARAM wParam, LP
             auto keyName = GetNameByKey(kbd->vkCode);
             std::u8string fnName;
             if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-#ifdef _LANG_ZH_TW_
-                fnName = u8"鍵盤按下";
-#else
-                fnName = u8"KeyboardDown";
-#endif // _LANG_ZH_TW_
+                if (I18n::GetLanguage() == Language::TraditionalChinese || I18n::GetLanguage() == Language::Cantonese) {
+                    fnName = u8"鍵盤按下";
+                } else if (I18n::GetLanguage() == Language::SimplifiedChinese) {
+                    fnName = u8"键盘按下";
+                } else {
+                    fnName = u8"KeyboardDown";
+                }
             } else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
-#ifdef _LANG_ZH_TW_
-                fnName = u8"鍵盤放開";
-#else
-                fnName = u8"KeyboardUp";
-#endif // _LANG_ZH_TW_
+                if (I18n::GetLanguage() == Language::TraditionalChinese || I18n::GetLanguage() == Language::Cantonese) {
+                    fnName = u8"鍵盤放開";
+                } else if (I18n::GetLanguage() == Language::SimplifiedChinese) {
+                    fnName = u8"键盘放开";
+                } else {
+                    fnName = u8"KeyboardUp";
+                }
             }
             if (!fnName.empty()) {
                 if (keyName.has_value()) {
@@ -59,58 +65,50 @@ LRESULT CALLBACK RecordHelper::LowLevelMouseProc(int nCode, WPARAM wParam, LPARA
     if (nCode >= 0 && instance.m_isRecording) {
         auto* mouse = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
         if (!(mouse->flags & LLMHF_INJECTED)) {
+            bool isTradOrCant = (I18n::GetLanguage() == Language::TraditionalChinese || I18n::GetLanguage() == Language::Cantonese);
+            bool isSimp = (I18n::GetLanguage() == Language::SimplifiedChinese);
             switch (wParam) {
             case WM_LBUTTONDOWN: 
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(u8"滑鼠按下(左)"); break;
-#else
-                instance.RecordCmd(u8"MouseDown(Left)"); break;
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(u8"滑鼠按下(左)");
+                else if (isSimp) instance.RecordCmd(u8"鼠标按下(左)");
+                else instance.RecordCmd(u8"MouseDown(Left)");
+                break;
             case WM_LBUTTONUP:   
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(u8"滑鼠放開(左)"); break;
-#else
-                instance.RecordCmd(u8"MouseUp(Left)"); break;
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(u8"滑鼠放開(左)");
+                else if (isSimp) instance.RecordCmd(u8"鼠标放开(左)");
+                else instance.RecordCmd(u8"MouseUp(Left)");
+                break;
             case WM_RBUTTONDOWN: 
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(u8"滑鼠按下(右)"); break;
-#else
-                instance.RecordCmd(u8"MouseDown(Right)"); break;
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(u8"滑鼠按下(右)");
+                else if (isSimp) instance.RecordCmd(u8"鼠标按下(右)");
+                else instance.RecordCmd(u8"MouseDown(Right)");
+                break;
             case WM_RBUTTONUP:   
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(u8"滑鼠放開(右)"); break;
-#else
-                instance.RecordCmd(u8"MouseUp(Right)"); break;
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(u8"滑鼠放開(右)");
+                else if (isSimp) instance.RecordCmd(u8"鼠标放开(右)");
+                else instance.RecordCmd(u8"MouseUp(Right)");
+                break;
             case WM_MBUTTONDOWN: 
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(u8"滑鼠按下(中)"); break;
-#else
-                instance.RecordCmd(u8"MouseDown(Middle)"); break;
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(u8"滑鼠按下(中)");
+                else if (isSimp) instance.RecordCmd(u8"鼠标按下(中)");
+                else instance.RecordCmd(u8"MouseDown(Middle)");
+                break;
             case WM_MBUTTONUP:   
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(u8"滑鼠放開(中)"); break;
-#else
-                instance.RecordCmd(u8"MouseUp(Middle)"); break;
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(u8"滑鼠放開(中)");
+                else if (isSimp) instance.RecordCmd(u8"鼠标放开(中)");
+                else instance.RecordCmd(u8"MouseUp(Middle)");
+                break;
             case WM_MOUSEWHEEL: {
                 short delta = GET_WHEEL_DELTA_WPARAM(mouse->mouseData);
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(delta > 0 ? u8"滾輪上()" : u8"滾輪下()");
-#else
-                instance.RecordCmd(delta > 0 ? u8"WheelUp()" : u8"WheelDown()");
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(delta > 0 ? u8"滾輪上()" : u8"滾輪下()");
+                else if (isSimp) instance.RecordCmd(delta > 0 ? u8"滚轮上()" : u8"滚轮下()");
+                else instance.RecordCmd(delta > 0 ? u8"WheelUp()" : u8"WheelDown()");
                 break;
             }
             case WM_MOUSEMOVE:
-#ifdef _LANG_ZH_TW_
-                instance.RecordCmd(u8"絕對移動" + ToU8StringUnchecked(std::format("({}, {})", mouse->pt.x, mouse->pt.y)));
-#else
-                instance.RecordCmd(u8"AbsoluteMove" + ToU8StringUnchecked(std::format("({}, {})", mouse->pt.x, mouse->pt.y)));
-#endif // _LANG_ZH_TW_
+                if (isTradOrCant) instance.RecordCmd(u8"絕對移動" + ToU8StringUnchecked(std::format("({}, {})", mouse->pt.x, mouse->pt.y)));
+                else if (isSimp) instance.RecordCmd(u8"绝对移动" + ToU8StringUnchecked(std::format("({}, {})", mouse->pt.x, mouse->pt.y)));
+                else instance.RecordCmd(u8"AbsoluteMove" + ToU8StringUnchecked(std::format("({}, {})", mouse->pt.x, mouse->pt.y)));
                 break;
             }
         }

@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ImMessageBox.h"
 
 void ImMessageBox::Show(const std::u8string& message, const std::u8string& title, std::function<void(ImMessageBoxResult)> callback) {
@@ -27,14 +27,14 @@ void ImMessageBox::Render() {
         ImGui::Separator();
         ImGui::Spacing();
 
-        if (ImGui::Button("OK", ImVec2(120, 0))) {
+        if (ImGui::Button(I18n::Get(StringId::Ok), ImVec2(120, 0))) {
             if (m_callback) m_callback(ImMessageBoxResult::Ok);
             ImGui::CloseCurrentPopup();
         }
 
         ImGui::SameLine();
 
-        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+        if (ImGui::Button(I18n::Get(StringId::Cancel), ImVec2(120, 0))) {
             if (m_callback) m_callback(ImMessageBoxResult::Cancel);
             ImGui::CloseCurrentPopup();
         }

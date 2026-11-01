@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "RecordWnd.h"
 
 static std::u8string g_scriptTextBuffer = u8"";
@@ -52,21 +52,25 @@ bool RecordWnd::SaveScriptToFile(
     combinedEndKeys.push_back(endKey);
     combinedEndKeys.insert(combinedEndKeys.end(), endKeyModifiers.begin(), endKeyModifiers.end());
 
-#ifdef _LANG_ZH_TW_
+    std::u8string hSetStartKey = u8"SetStartKey";
+    std::u8string hSetEndKey = u8"SetEndKey";
+    std::u8string hSetRunMode = u8"SetRunMode";
+    if (I18n::GetLanguage() == Language::TraditionalChinese || I18n::GetLanguage() == Language::Cantonese) {
+        hSetStartKey = u8"設定開始按鍵";
+        hSetEndKey = u8"設定停止按鍵";
+        hSetRunMode = u8"設定運行模式";
+    } else if (I18n::GetLanguage() == Language::SimplifiedChinese) {
+        hSetStartKey = u8"设定开始按键";
+        hSetEndKey = u8"设定停止按键";
+        hSetRunMode = u8"设定运行模式";
+    }
+
     std::vector<std::u8string> headers = {
-        u8"設定開始按鍵(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
-        u8"設定停止按鍵(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
-        u8"設定運行模式(" + runMode + u8")",
+        hSetStartKey + u8"(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
+        hSetEndKey + u8"(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
+        hSetRunMode + u8"(" + runMode + u8")",
         u8"",
     };
-#else
-    std::vector<std::u8string> headers = {
-        u8"SetStartKey(" + JoinU8Strings(combinedStartKeys, u8", ") + u8")",
-        u8"SetEndKey(" + JoinU8Strings(combinedEndKeys, u8", ") + u8")",
-        u8"SetRunMode(" + runMode + u8")",
-        u8"",
-    };
-#endif
 
     constexpr size_t LongPathMax = 32768;
     std::vector<wchar_t> szFile(LongPathMax, L'\0');
@@ -83,11 +87,7 @@ bool RecordWnd::SaveScriptToFile(
         std::wstring filePath = szFile.data();
         std::ofstream file(std::filesystem::path(filePath), std::ios::binary);
         if (!file.is_open()) {
-#ifdef _LANG_ZH_TW_
-            MsgBox().Show(u8"無法開啟檔案以進行寫入", u8"保存失敗");
-#else
-            MsgBox().Show(u8"Failed to open file for writing", u8"Save File Failed");
-#endif
+            MsgBox().Show(I18n::GetU8(StringId::MsgOpenFileWriteFailed), I18n::GetU8(StringId::TitleSaveFailed));
             return false;
         }
 
@@ -109,11 +109,7 @@ bool RecordWnd::SaveScriptToFile(
         }
         file.close();
 
-#ifdef _LANG_ZH_TW_
-        MsgBox().Show(std::format(L"腳本已保存至: {}", filePath), L"保存成功");
-#else
-        MsgBox().Show(std::format(L"Script is saved to: {}", filePath), L"Save Success");
-#endif
+        MsgBox().Show(I18n::FormatW(StringId::MsgScriptSavedTo, filePath), I18n::GetW(StringId::TitleSaveSuccess));
         return true;
     }
     return false;
@@ -132,17 +128,10 @@ void RecordWnd::RenderWindow(HWND hwnd, bool* pOpen) {
     ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
 
-#ifdef _LANG_ZH_TW_
-    if (!ImGui::Begin("腳本記錄器", pOpen)) {
+    if (!ImGui::Begin(I18n::Get(StringId::ScriptRecorder), pOpen)) {
         ImGui::End();
         return;
     }
-#else
-    if (!ImGui::Begin("Script Recorder", pOpen)) {
-        ImGui::End();
-        return;
-    }
-#endif
 
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         *pOpen = false;
@@ -152,11 +141,7 @@ void RecordWnd::RenderWindow(HWND hwnd, bool* pOpen) {
     bool isPlaying = RecordHelper::GetInstance().IsPlaying();
 
     if (isPlaying) ImGui::BeginDisabled();
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button(isRecording ? "停止記錄" : "記錄")) {
-#else
-    if (ImGui::Button(isRecording ? "Stop Rec" : "Record")) {
-#endif
+    if (ImGui::Button(I18n::Get(isRecording ? StringId::StopRec : StringId::Record))) {
         if (isRecording) {
             RecordHelper::GetInstance().StopRecording();
             SyncBufferToEdit();
@@ -170,11 +155,7 @@ void RecordWnd::RenderWindow(HWND hwnd, bool* pOpen) {
     ImGui::SameLine();
 
     if (isRecording) ImGui::BeginDisabled();
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button(isPlaying ? "停止執行" : "執行")) {
-#else
-    if (ImGui::Button(isPlaying ? "Stop Play" : "Play")) {
-#endif
+    if (ImGui::Button(I18n::Get(isPlaying ? StringId::StopPlay : StringId::Play))) {
         if (isPlaying) {
             RecordHelper::GetInstance().StopPlayback();
         } else {
@@ -183,11 +164,7 @@ void RecordWnd::RenderWindow(HWND hwnd, bool* pOpen) {
             std::u8string errorMsg;
             int errorLine = 0;
             if (!RecordHelper::GetInstance().GetCommands(parsedCommands, errorMsg, errorLine)) {
-#ifdef _LANG_ZH_TW_
-                MsgBox().Show(errorMsg, u8"腳本錯誤");
-#else
-                MsgBox().Show(errorMsg, u8"Script Syntax Error");
-#endif
+                MsgBox().Show(errorMsg, I18n::GetU8(StringId::TitleScriptError));
             } else {
                 RecordHelper::GetInstance().StartPlayback(parsedCommands, nullptr, nullptr);
             }
@@ -197,15 +174,9 @@ void RecordWnd::RenderWindow(HWND hwnd, bool* pOpen) {
 
     ImGui::SameLine();
 
-#ifdef _LANG_ZH_TW_
-    if (ImGui::Button("保存腳本")) {
-        s_changeKeyAndModePopUp.Open("保存腳本", std::nullopt, std::nullopt, std::nullopt);
+    if (ImGui::Button(I18n::Get(StringId::SaveScript))) {
+        s_changeKeyAndModePopUp.Open(I18n::Get(StringId::SaveScript), std::nullopt, std::nullopt, std::nullopt);
     }
-#else
-    if (ImGui::Button("Save Script")) {
-        s_changeKeyAndModePopUp.Open("Save Script", std::nullopt, std::nullopt, std::nullopt);
-    }
-#endif
 
     s_changeKeyAndModePopUp.RenderPopup(viewport, NULL, [&](
         std::u8string startKey,
@@ -217,15 +188,9 @@ void RecordWnd::RenderWindow(HWND hwnd, bool* pOpen) {
         SaveScriptToFile(hwnd, startKey, startKeyModifiers, endKey, endKeyModifiers, runMode);
     });
 
-#ifdef _LANG_ZH_TW_
-    if (isRecording) ImGui::TextColored(ImVec4(1, 0, 0, 1), "狀態: 記錄中...");
-    else if (isPlaying) ImGui::TextColored(ImVec4(0, 1, 0, 1), "狀態: 執行中...");
-    else ImGui::Text("狀態: 無");
-#else
-    if (isRecording) ImGui::TextColored(ImVec4(1, 0, 0, 1), "Status: RECORDING...");
-    else if (isPlaying) ImGui::TextColored(ImVec4(0, 1, 0, 1), "Status: EXECUTING...");
-    else ImGui::Text("Status: IDLE");
-#endif
+    if (isRecording) ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", I18n::Get(StringId::StatusRecording));
+    else if (isPlaying) ImGui::TextColored(ImVec4(0, 1, 0, 1), "%s", I18n::Get(StringId::StatusPlaying));
+    else ImGui::Text("%s", I18n::Get(StringId::StatusIdle));
 
     ImGui::Separator();
 
